@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bảng điều khiển tiến độ dự án · 프로젝트 진행 현황판</title>
+<style>
+  :root{
+    --bg:#f4f6fa;
+    --card:#ffffff;
+    --line:#e6e9f0;
+    --text:#1b2436;
+    --muted:#68708a;
+    --accent:#2f6fed;
+    --accent-soft:#c9d9fb;
+    --amber:#f5a623;
+    --green:#1fb571;
+    --red:#e5484d;
+    --red-dark:#b3261e;
+    --radius:14px;
+    --shadow:0 1px 2px rgba(20,25,40,.04), 0 8px 24px rgba(20,25,40,.05);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    padding:28px;
+  }
+  .wrap{max-width:1200px;margin:0 auto;}
+  .kr{color:var(--muted);font-weight:500;}
+
+  /* ===== Header ===== */
+  .header{
+    background:var(--card);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    padding:26px 30px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:24px;
+    flex-wrap:wrap;
+    margin-bottom:22px;
+  }
+  .eyebrow{
+    font-size:12.5px;
+    letter-spacing:.06em;
+    color:var(--muted);
+    text-transform:uppercase;
+    font-weight:600;
+    margin-bottom:6px;
+  }
+  .title{font-size:24px;font-weight:700;margin:0 0 3px;}
+  .title-kr{font-size:14px;font-weight:600;color:var(--muted);margin:0 0 8px;}
+  .subtitle{color:var(--muted);font-size:13.5px;line-height:1.5;max-width:600px;}
+  .subtitle-kr{color:var(--muted);font-size:12.5px;line-height:1.5;max-width:600px;margin-top:4px;font-style:italic;}
+  .save-status{
+    display:flex;align-items:center;gap:6px;font-size:12px;color:var(--green);font-weight:600;margin-top:10px;
+  }
+  .save-status.pending{color:var(--amber);}
+  .save-status .save-dot{width:7px;height:7px;border-radius:50%;background:currentColor;flex:none;}
+  .stats{display:flex;align-items:center;gap:22px;}
+  .ring-wrap{position:relative;width:96px;height:96px;flex:none;}
+  .ring-wrap svg{transform:rotate(-90deg);}
+  .ring-label{
+    position:absolute;inset:0;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;
+  }
+  .ring-label b{font-size:20px;line-height:1;}
+  .ring-label span{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;margin-top:2px;text-align:center;}
+  .legend{display:flex;flex-direction:column;gap:6px;font-size:13px;}
+  .legend div{display:flex;align-items:center;gap:8px;}
+  .dot{width:9px;height:9px;border-radius:50%;flex:none;}
+  .dot.blue{background:var(--accent);}
+  .dot.amber{background:var(--amber);}
+  .dot.green{background:var(--green);}
+  .dot.red{background:var(--red);}
+  .legend b{min-width:18px;text-align:right;}
+
+  /* ===== Timeline ===== */
+  .panel{
+    background:var(--card);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    padding:22px 24px;
+    margin-bottom:20px;
+  }
+  .panel h2{font-size:14px;margin:0 0 2px;}
+  .panel .hint{color:var(--muted);font-size:12px;margin-bottom:14px;}
+  .tl-scroll{overflow-x:auto;padding-bottom:6px;}
+  .tl{min-width:1360px;position:relative;}
+  .tl-head{display:grid;grid-template-columns:220px repeat(19,1fr);font-size:11px;color:var(--muted);border-bottom:1px solid var(--line);padding-bottom:8px;margin-bottom:6px;}
+  .tl-head div{text-align:center;}
+  .tl-head div:first-child{text-align:left;}
+  .tl-row{display:grid;grid-template-columns:220px repeat(19,1fr);align-items:center;height:34px;position:relative;}
+  .tl-row .name{display:flex;align-items:center;gap:6px;min-width:0;padding-right:10px;}
+  .tl-title{font-size:12.5px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1;}
+  .tl-track{grid-column:2 / span 19;position:relative;height:10px;}
+  .tl-bar{
+    position:absolute;top:0;height:10px;border-radius:6px;background:var(--accent-soft);
+  }
+  .tl-bar.status-1{background:var(--accent-soft);}
+  .tl-bar.status-2{background:#fde3b8;}
+  .tl-bar.status-3{background:#c8f0dd;}
+  .tl-bar.status-4{background:#f8d2d3;}
+  .tl-bar-fill{
+    position:absolute;top:0;height:10px;border-radius:6px;
+  }
+  .tl-bar-fill.status-1{background:var(--accent);}
+  .tl-bar-fill.status-2{background:var(--amber);}
+  .tl-bar-fill.status-3{background:var(--green);}
+  .tl-bar-fill.status-4{background:var(--red-dark);}
+  .tl-pct{font-size:11px;color:var(--muted);font-weight:600;margin-left:6px;}
+
+  /* ===== Filters ===== */
+  .filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px;}
+  .search{
+    flex:1;min-width:220px;
+    border:1px solid var(--line);border-radius:10px;padding:10px 14px;
+    font-size:13.5px;background:var(--card);color:var(--text);
+  }
+  .pill{
+    border:1px solid var(--line);background:var(--card);color:var(--muted);
+    border-radius:999px;padding:9px 16px;font-size:13px;cursor:pointer;white-space:nowrap;
+  }
+  .pill.active{background:var(--text);color:#fff;border-color:var(--text);}
+
+  /* ===== Project cards ===== */
+  .card{
+    background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);
+    padding:22px 24px;margin-bottom:16px;
+  }
+  .card-top{display:flex;gap:14px;align-items:flex-start;}
+  .num{font-size:12px;color:var(--muted);font-weight:600;padding-top:4px;min-width:22px;}
+  .card-body{flex:1;}
+  .card-title-row{display:flex;align-items:center;gap:9px;flex-wrap:wrap;}
+  .status-dot{width:9px;height:9px;border-radius:50%;flex:none;}
+  .card-title{font-size:16px;font-weight:600;}
+  .card-title-kr{font-size:12.5px;color:var(--muted);margin-top:2px;margin-left:18px;}
+  .members{margin-top:10px;display:flex;flex-wrap:wrap;gap:6px;}
+  .tag{
+    background:#eef2fb;color:var(--accent);font-size:12px;padding:5px 11px;border-radius:999px;font-weight:500;
+  }
+  .controls-row{
+    display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-top:16px;
+  }
+  select, .num-input{
+    border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:13px;background:#fbfbfd;color:var(--text);
+  }
+  .arrow{color:var(--muted);font-size:13px;}
+  .progress-row{display:flex;align-items:center;gap:10px;flex:1;min-width:200px;}
+  .progress-row input[type=range]{flex:1;accent-color:var(--accent);}
+  .progress-row input[type=range].status-1{accent-color:var(--accent);}
+  .progress-row input[type=range].status-2{accent-color:var(--amber);}
+  .progress-row input[type=range].status-3{accent-color:var(--green);}
+  .progress-row input[type=range].status-4{accent-color:var(--red-dark);}
+  .progress-pct{font-size:13px;font-weight:600;min-width:32px;text-align:right;}
+
+  .section-label{
+    font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:700;
+    margin-top:20px;margin-bottom:8px;
+  }
+  .milestones{display:flex;flex-direction:column;gap:8px;}
+  .milestone-item{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    background:#f7f8fb;border:1px solid var(--line);border-radius:8px;padding:8px 12px;font-size:13px;
+  }
+  .milestone-item .m-text{display:flex;flex-direction:column;gap:1px;}
+  .milestone-item .m-text .m-kr{font-size:11.5px;color:var(--muted);}
+  .milestone-item .m-del{cursor:pointer;color:var(--muted);border:none;background:none;font-size:15px;}
+  .milestone-empty{color:var(--muted);font-size:13px;padding:6px 0;}
+  .add-milestone{display:flex;gap:8px;margin-top:8px;}
+  .add-milestone input[type=text]{
+    flex:1;border:1px solid var(--line);border-radius:8px;padding:9px 12px;font-size:13px;background:#fbfbfd;color:var(--text);
+  }
+  .btn{
+    background:var(--text);color:#fff;border:none;border-radius:8px;padding:9px 16px;font-size:13px;cursor:pointer;white-space:nowrap;
+  }
+  .btn:hover{opacity:.9;}
+  textarea{
+    width:100%;border:1px solid var(--line);border-radius:10px;padding:12px 14px;font-size:13.5px;
+    font-family:inherit;color:var(--text);background:#fbfbfd;resize:vertical;min-height:64px;
+  }
+  .saved-hint{font-size:11px;color:var(--muted);margin-top:6px;}
+  .empty-state{text-align:center;color:var(--muted);padding:40px 0;font-size:13.5px;}
+
+  .toast{
+    position:fixed;bottom:24px;right:24px;
+    background:#1b2436;color:#fff;padding:11px 18px;border-radius:10px;
+    font-size:13px;box-shadow:0 8px 24px rgba(20,25,40,.25);
+    opacity:0;transform:translateY(8px);pointer-events:none;
+    transition:opacity .25s ease, transform .25s ease;
+    z-index:50;max-width:340px;
+  }
+  .toast.show{opacity:1;transform:translateY(0);}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="header">
+    <div>
+      <div class="eyebrow">TEAM PC · TOP ENGINEERING VINA · 13 DỰ ÁN ĐĂNG KÝ · 등록 프로젝트 13건</div>
+      <div class="title">Bảng điều khiển tiến độ dự án</div>
+      <div class="title-kr">프로젝트 진행 현황판</div>
+      <div class="subtitle">Theo dõi trạng thái, tiến độ và ghi chú của từng dự án. Dữ liệu được lưu trên trình duyệt này (localStorage) — mỗi lần cập nhật sẽ tự lưu lại.</div>
+      <div class="subtitle-kr">각 프로젝트의 상태, 진행률, 메모를 추적합니다. 데이터는 이 브라우저(localStorage)에 저장되며, 업데이트할 때마다 자동으로 저장됩니다.</div>
+      <div class="save-status" id="saveStatus">Chưa có thay đổi nào. · 아직 변경 사항이 없습니다.</div>
+    </div>
+    <div class="stats">
+      <div class="ring-wrap">
+        <svg width="96" height="96" viewBox="0 0 96 96">
+          <circle cx="48" cy="48" r="40" fill="none" stroke="#eef0f5" stroke-width="10"/>
+          <circle id="ringFg" cx="48" cy="48" r="40" fill="none" stroke="#2f6fed" stroke-width="10" stroke-linecap="round" stroke-dasharray="251.2" stroke-dashoffset="251.2"/>
+        </svg>
+        <div class="ring-label">
+          <b id="ringPct">0%</b>
+          <span>Tiến độ TB<br>평균 진행률</span>
+        </div>
+      </div>
+      <div class="legend">
+        <div><span class="dot blue"></span><b id="cnt1">13</b> Chưa bắt đầu · <span class="kr">시작 전</span></div>
+        <div><span class="dot amber"></span><b id="cnt2">0</b> Đang thực hiện · <span class="kr">진행 중</span></div>
+        <div><span class="dot green"></span><b id="cnt3">0</b> Hoàn thành · <span class="kr">완료</span></div>
+        <div><span class="dot red"></span><b id="cnt4">0</b> Tạm dừng · <span class="kr">보류</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Dòng thời gian dự án · <span class="kr">프로젝트 타임라인</span></h2>
+    <div class="hint" id="tlHint">Tháng 6/2026 → tháng 12/2027 · vạch đỏ = hôm nay · 2026년 6월 → 2027년 12월 · 빨간선 = 오늘</div>
+    <div class="tl-scroll">
+      <div class="tl" id="tlWrap"></div>
+    </div>
+  </div>
+
+  <div class="filters">
+    <input class="search" id="searchBox" placeholder="Tìm theo tên dự án hoặc thành viên... · 프로젝트명 또는 담당자로 검색...">
+    <button class="pill active" data-filter="all">Tất cả · 전체</button>
+    <button class="pill" data-filter="1">Chưa bắt đầu · 시작 전</button>
+    <button class="pill" data-filter="2">Đang thực hiện · 진행 중</button>
+    <button class="pill" data-filter="3">Hoàn thành · 완료</button>
+    <button class="pill" data-filter="4">Tạm dừng · 보류</button>
+  </div>
+
+  <div id="cardsWrap"></div>
+  <div class="empty-state" id="emptyState" style="display:none;">Không tìm thấy dự án phù hợp. · 해당하는 프로젝트가 없습니다.</div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const MONTHS = ["T6/26","T7/26","T8/26","T9/26","T10/26","T11/26","T12/26","T1/27","T2/27","T3/27","T4/27","T5/27","T6/27","T7/27","T8/27","T9/27","T10/27","T11/27","T12/27"];
+const MONTH_COUNT = MONTHS.length; // 19
+const TODAY_INDEX = 2 + (15/31); // 15/8/2026 within Aug/26 (index 2)
+
+const STATUS_VI = {1:"Chưa bắt đầu",2:"Đang thực hiện",3:"Hoàn thành",4:"Tạm dừng"};
+const STATUS_KR = {1:"시작 전",2:"진행 중",3:"완료",4:"보류"};
+
+const PROJECTS = [
+  {id:1, name:"Xây dựng phần mềm quản lý công việc trong CÔNG TY", name_kr:"사내 업무 관리 소프트웨어 구축", members:["Nguyễn Văn Được","Nguyễn Văn Minh","Nguyễn Phương Thanh","Bùi Văn Hợi (BILL)","Trần Anh Tuấn","Lê Hoàng Anh"]},
+  {id:2, name:"Tìm hiểu EQX.Platform", name_kr:"EQX.Platform 조사", members:["Nguyễn Văn Minh","Lê Hoài Nam"]},
+  {id:3, name:"Làm phần mềm giả lập máy (Machine Simulator)", name_kr:"기계 시뮬레이터 소프트웨어 개발", members:["Lê Hoài Nam","Nguyễn Văn Minh","Lương Đức Mạnh","Nguyễn Văn Được","Bùi Văn Hợi (BILL)","Lê Hoàng Anh"]},
+  {id:4, name:"3D cho thiết kế điện", name_kr:"전기 설계용 3D 작업", members:["Võ Hồng Quân","Nguyễn Đức Thắng","Nguyễn Tiến Dũng","Nguyễn Hữu Hiệp","Trần Ngọc Hiệp","Lê Đình Hiểu","Trần Anh Tuấn","Nguyễn Mạnh Dũng"]},
+  {id:5, name:"LOOP ENGINEERING", name_kr:"LOOP ENGINEERING", members:["Nguyễn Đình Thắng","Vũ Chí Cường"]},
+  {id:6, name:"Seminar ứng dụng AI", name_kr:"AI 활용 세미나", members:["Nguyễn Đình Thắng","Vũ Chí Cường"]},
+  {id:7, name:"Teaching Pendant, Power Supply", name_kr:"티칭 펜던트, 파워 서플라이", members:["Nguyễn Văn Minh","Dương Đức Huy","Thái Doãn Tín","Lê Đình Hiểu","Nguyễn Hữu Hiệp","Đào Xuân Dũng"]},
+  {id:8, name:"InOut Terminal (Modbus RTU, Modbus TCP, EtherCAT)", name_kr:"입출력 터미널 (Modbus RTU, Modbus TCP, EtherCAT)", members:["Nguyễn Văn Minh","Lê Đăng Nam","Vũ Chí Cường","Nguyễn Đình Thắng","Lê Đình Hiểu"]},
+  {id:9, name:"Cheap Controller (Windows, Linux, On-Board PC)", name_kr:"저가형 컨트롤러 (Windows, Linux, 온보드 PC)", members:["Nguyễn Văn Minh","Lê Đăng Nam","Vũ Chí Cường","Nguyễn Đình Thắng","Dương Đức Huy","Thái Doãn Tín"]},
+  {id:10, name:"Line Tour (SDV, SEV, SEVT)", name_kr:"라인 투어 (SDV, SEV, SEVT)", members:["Nguyễn Tiến Dũng","Nguyễn Văn Được","Lương Đức Mạnh","Nguyễn Phương Thanh","Trần Ngọc Hiệp","Nguyễn Đức Thắng"]},
+  {id:11, name:"Xây dựng thư viện xử lý ảnh (EQX.Vision)", name_kr:"이미지 처리 라이브러리 구축 (EQX.Vision)", members:["Lương Đức Mạnh","Nguyễn Phú Trọng","Phạm Thanh Bình","Lê Hoàng Anh"]},
+  {id:12, name:"Lập trình PLC", name_kr:"PLC 프로그래밍", members:["Nguyễn Hữu Dũng","Võ Hồng Quân","Nguyễn Đức Thắng","Lê Đăng Nam","Nguyễn Tiến Dũng","Nguyễn Văn Được","Lê Hoài Nam","Lương Đức Mạnh","Bùi Văn Hợi (BILL)","Nguyễn Hữu Hiệp","Trần Ngọc Hiệp","Nguyễn Phú Trọng","Trần Anh Tuấn","Đào Xuân Dũng","Nguyễn Mạnh Dũng","Nguyễn Phương Thanh"]},
+  {id:13, name:"Xây dựng web quản lý source code (tương tự GitHub, Bitbucket)", name_kr:"소스코드 관리 웹 구축 (GitHub, Bitbucket 유사)", members:["Nguyễn Văn Minh","Trần Anh Tuấn"]},
+];
+
+// Lộ trình gợi ý cho từng dự án, T8/26(index2) → T12/26(index6). Có thể sửa/xoá trên giao diện.
+const MILESTONE_TEMPLATES = {
+  1: [
+    {label:"Khảo sát nhu cầu & xác định phạm vi", label_kr:"요구사항 조사 및 범위 확정", month:2},
+    {label:"Thiết kế cơ sở dữ liệu & giao diện", label_kr:"데이터베이스 및 UI 설계", month:3},
+    {label:"Phát triển module quản lý công việc", label_kr:"업무 관리 모듈 개발", month:4},
+    {label:"Kiểm thử nội bộ & sửa lỗi", label_kr:"내부 테스트 및 버그 수정", month:5},
+    {label:"Triển khai thử nghiệm cho 1 phòng ban", label_kr:"1개 부서 대상 시범 운영", month:6},
+  ],
+  2: [
+    {label:"Thu thập tài liệu & cài đặt môi trường thử nghiệm", label_kr:"자료 수집 및 테스트 환경 구축", month:2},
+    {label:"Thử nghiệm các tính năng cốt lõi", label_kr:"핵심 기능 테스트", month:3},
+    {label:"Đánh giá khả năng tích hợp", label_kr:"통합 가능성 평가", month:4},
+    {label:"Viết báo cáo tổng hợp", label_kr:"종합 보고서 작성", month:5},
+    {label:"Trình bày kết quả & đề xuất hướng ứng dụng", label_kr:"결과 발표 및 활용 방안 제안", month:6},
+  ],
+  3: [
+    {label:"Xác định yêu cầu mô phỏng", label_kr:"시뮬레이션 요구사항 정의", month:2},
+    {label:"Thiết kế kiến trúc phần mềm", label_kr:"소프트웨어 아키텍처 설계", month:3},
+    {label:"Phát triển engine mô phỏng", label_kr:"시뮬레이션 엔진 개발", month:4},
+    {label:"Kiểm thử với dữ liệu thực tế", label_kr:"실제 데이터로 테스트", month:5},
+    {label:"Hoàn thiện bản demo đầu tiên", label_kr:"1차 데모 완성", month:6},
+  ],
+  4: [
+    {label:"Khảo sát công cụ thiết kế 3D phù hợp", label_kr:"적합한 3D 설계 도구 조사", month:2},
+    {label:"Xây dựng thư viện linh kiện 3D", label_kr:"3D 부품 라이브러리 구축", month:3},
+    {label:"Thiết kế mẫu tủ điện 3D đầu tiên", label_kr:"1차 전기 캐비닛 3D 모델 설계", month:4},
+    {label:"Review & điều chỉnh theo phản hồi", label_kr:"검토 및 피드백 반영", month:5},
+    {label:"Chuẩn hóa quy trình thiết kế 3D", label_kr:"3D 설계 프로세스 표준화", month:6},
+  ],
+  5: [
+    {label:"Xác định phạm vi & mục tiêu dự án", label_kr:"프로젝트 범위 및 목표 설정", month:2},
+    {label:"Lập kế hoạch triển khai chi tiết", label_kr:"세부 실행 계획 수립", month:3},
+    {label:"Triển khai giai đoạn 1", label_kr:"1단계 실행", month:4},
+    {label:"Đánh giá tiến độ giữa kỳ", label_kr:"중간 진행 평가", month:5},
+    {label:"Tổng kết giai đoạn đầu", label_kr:"1차 단계 마무리", month:6},
+  ],
+  6: [
+    {label:"Lên chủ đề & nội dung seminar", label_kr:"세미나 주제 및 내용 기획", month:2},
+    {label:"Chuẩn bị tài liệu & slide", label_kr:"자료 및 슬라이드 준비", month:3},
+    {label:"Seminar thử nghiệm nội bộ", label_kr:"사내 시범 세미나", month:4},
+    {label:"Điều chỉnh nội dung theo phản hồi", label_kr:"피드백에 따른 내용 수정", month:5},
+    {label:"Tổ chức seminar chính thức", label_kr:"정식 세미나 개최", month:6},
+  ],
+  7: [
+    {label:"Khảo sát yêu cầu kỹ thuật", label_kr:"기술 요구사항 조사", month:2},
+    {label:"Thiết kế mạch & sơ đồ nguyên lý", label_kr:"회로 및 원리도 설계", month:3},
+    {label:"Làm mạch thử nghiệm (prototype)", label_kr:"시제품 회로 제작", month:4},
+    {label:"Kiểm thử & đo đạc thông số", label_kr:"테스트 및 파라미터 측정", month:5},
+    {label:"Hoàn thiện phiên bản thử nghiệm đầu tiên", label_kr:"1차 시제품 완성", month:6},
+  ],
+  8: [
+    {label:"Nghiên cứu giao thức Modbus/EtherCAT", label_kr:"Modbus/EtherCAT 프로토콜 연구", month:2},
+    {label:"Thiết kế phần cứng terminal", label_kr:"터미널 하드웨어 설계", month:3},
+    {label:"Phát triển firmware giao tiếp", label_kr:"통신 펌웨어 개발", month:4},
+    {label:"Kiểm thử kết nối với PLC thực tế", label_kr:"실제 PLC 연결 테스트", month:5},
+    {label:"Hoàn thiện bản mẫu terminal", label_kr:"터미널 시제품 완성", month:6},
+  ],
+  9: [
+    {label:"Khảo sát nền tảng phần cứng giá rẻ", label_kr:"저가형 하드웨어 플랫폼 조사", month:2},
+    {label:"Thiết kế kiến trúc phần mềm điều khiển", label_kr:"제어 소프트웨어 아키텍처 설계", month:3},
+    {label:"Phát triển driver & giao diện điều khiển", label_kr:"드라이버 및 제어 인터페이스 개발", month:4},
+    {label:"Kiểm thử trên Windows/Linux", label_kr:"Windows/Linux 환경 테스트", month:5},
+    {label:"Hoàn thiện bộ điều khiển thử nghiệm", label_kr:"테스트용 컨트롤러 완성", month:6},
+  ],
+  10: [
+    {label:"Lập kế hoạch khảo sát dây chuyền", label_kr:"라인 조사 계획 수립", month:2},
+    {label:"Khảo sát thực tế tại nhà máy SDV/SEV/SEVT", label_kr:"SDV/SEV/SEVT 현장 조사", month:3},
+    {label:"Tổng hợp dữ liệu & vấn đề phát sinh", label_kr:"데이터 및 발생 이슈 정리", month:4},
+    {label:"Đề xuất giải pháp cải tiến", label_kr:"개선 방안 제안", month:5},
+    {label:"Báo cáo tổng kết line tour", label_kr:"라인 투어 결과 보고", month:6},
+  ],
+  11: [
+    {label:"Xác định các thuật toán xử lý ảnh cần thiết", label_kr:"필요한 이미지 처리 알고리즘 정의", month:2},
+    {label:"Xây dựng module xử lý ảnh cơ bản", label_kr:"기본 이미지 처리 모듈 구축", month:3},
+    {label:"Tích hợp thuật toán nhận diện/phát hiện lỗi", label_kr:"인식/결함 검출 알고리즘 통합", month:4},
+    {label:"Kiểm thử với dữ liệu ảnh thực tế", label_kr:"실제 이미지 데이터로 테스트", month:5},
+    {label:"Hoàn thiện phiên bản thư viện đầu tiên", label_kr:"1차 라이브러리 버전 완성", month:6},
+  ],
+  12: [
+    {label:"Khảo sát yêu cầu ứng dụng PLC", label_kr:"PLC 적용 요구사항 조사", month:2},
+    {label:"Thiết kế logic điều khiển", label_kr:"제어 로직 설계", month:3},
+    {label:"Lập trình & mô phỏng chương trình PLC", label_kr:"PLC 프로그램 작성 및 시뮬레이션", month:4},
+    {label:"Kiểm thử trên phần cứng thực tế", label_kr:"실제 하드웨어 테스트", month:5},
+    {label:"Hoàn thiện & bàn giao chương trình PLC", label_kr:"PLC 프로그램 완성 및 인수인계", month:6},
+  ],
+  13: [
+    {label:"Khảo sát yêu cầu & chọn công nghệ", label_kr:"요구사항 조사 및 기술 선정", month:2},
+    {label:"Thiết kế kiến trúc hệ thống", label_kr:"시스템 아키텍처 설계", month:3},
+    {label:"Phát triển tính năng quản lý repository cơ bản", label_kr:"기본 저장소 관리 기능 개발", month:4},
+    {label:"Kiểm thử & vá lỗi bảo mật", label_kr:"테스트 및 보안 취약점 패치", month:5},
+    {label:"Triển khai bản thử nghiệm nội bộ", label_kr:"사내 시범 배포", month:6},
+  ],
+};
+
+const STORAGE_KEY = "teampc_13duan_progress_v1";
+
+function loadState(){
+  let raw = null;
+  try{ raw = localStorage.getItem(STORAGE_KEY); }catch(e){}
+  let saved = {};
+  if(raw){ try{ saved = JSON.parse(raw); }catch(e){ saved = {}; } }
+  PROJECTS.forEach(p=>{
+    if(!saved[p.id]){
+      const defaultMilestones = (MILESTONE_TEMPLATES[p.id] || []).map(m=>({...m}));
+      saved[p.id] = {status:1, start:0, end:6, progress:0, notes:"", milestones:defaultMilestones};
+    }
+  });
+  return saved;
+}
+
+let state = loadState();
+let activeFilter = "all";
+let searchTerm = "";
+
+function saveState(){
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    updateSaveStatus(true);
+  }catch(e){
+    updateSaveStatus(false);
+  }
+}
+
+function updateSaveStatus(ok){
+  const el = document.getElementById("saveStatus");
+  if(!el) return;
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString("vi-VN",{hour:"2-digit",minute:"2-digit"});
+  if(ok){
+    el.classList.remove("pending");
+    el.innerHTML = `<span class="save-dot"></span> Đã lưu lúc ${timeStr} · <span class="kr">저장 시각 ${timeStr}</span>`;
+  }else{
+    el.classList.add("pending");
+    el.innerHTML = `<span class="save-dot"></span> Không lưu được · <span class="kr">저장 실패</span>`;
+  }
+}
+
+let toastTimer = null;
+function showToast(msg){
+  const t = document.getElementById("toast");
+  if(!t) return;
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>{ t.classList.remove("show"); }, 1800);
+}
+
+function monthOptions(selected){
+  return MONTHS.map((m,i)=>`<option value="${i}" ${i==selected?"selected":""}>${m}</option>`).join("");
+}
+
+function render(){
+  renderHeader();
+  renderTimeline();
+  renderCards();
+  saveState();
+}
+
+function renderHeader(){
+  const counts = {1:0,2:0,3:0,4:0};
+  let sumProgress = 0;
+  PROJECTS.forEach(p=>{
+    const s = state[p.id];
+    counts[s.status]++;
+    sumProgress += Number(s.progress)||0;
+  });
+  document.getElementById("cnt1").textContent = counts[1];
+  document.getElementById("cnt2").textContent = counts[2];
+  document.getElementById("cnt3").textContent = counts[3];
+  document.getElementById("cnt4").textContent = counts[4];
+  const avg = Math.round(sumProgress / PROJECTS.length);
+  document.getElementById("ringPct").textContent = avg + "%";
+  const circumference = 251.2;
+  const offset = circumference - (avg/100)*circumference;
+  document.getElementById("ringFg").setAttribute("stroke-dashoffset", offset);
+}
+
+function renderTimeline(){
+  const wrap = document.getElementById("tlWrap");
+  let html = `<div class="tl-head"><div></div>${MONTHS.map(m=>`<div>${m}</div>`).join("")}</div>`;
+  PROJECTS.forEach(p=>{
+    const s = state[p.id];
+    const code = String(p.id).padStart(2,"0");
+    const span = Math.max(1, s.end - s.start + 1);
+    const leftPct = (s.start/MONTH_COUNT)*100;
+    const widthPct = (span/MONTH_COUNT)*100;
+    const fillWidthPct = widthPct * ((Number(s.progress)||0)/100);
+    html += `<div class="tl-row">
+      <div class="name"><span class="tl-title">${code} · ${p.name}</span><span class="tl-pct">${s.progress}%</span></div>
+      <div class="tl-track">
+        <div class="tl-bar status-${s.status}" style="left:${leftPct}%;width:${widthPct}%;"></div>
+        <div class="tl-bar-fill status-${s.status}" style="left:${leftPct}%;width:${fillWidthPct}%;"></div>
+      </div>
+    </div>`;
+  });
+  wrap.innerHTML = html;
+
+  const nameColPx = 220;
+  const totalWidth = 1360;
+  const trackWidth = totalWidth - nameColPx;
+  const markerLeft = nameColPx + (TODAY_INDEX/MONTH_COUNT)*trackWidth;
+  const marker = document.createElement("div");
+  marker.style.position = "absolute";
+  marker.style.top = "34px";
+  marker.style.bottom = "0";
+  marker.style.left = markerLeft + "px";
+  marker.style.width = "2px";
+  marker.style.background = "var(--red)";
+  marker.style.pointerEvents = "none";
+  wrap.style.position = "relative";
+  wrap.appendChild(marker);
+
+  document.getElementById("tlHint").textContent = `Tháng 6/2026 → tháng 12/2027 · vạch đỏ = hôm nay (${new Date().toLocaleDateString("vi-VN")}) · 2026년 6월 → 2027년 12월 · 빨간선 = 오늘`;
+}
+
+function passesFilter(p){
+  const s = state[p.id];
+  if(activeFilter !== "all" && String(s.status) !== activeFilter) return false;
+  if(searchTerm){
+    const t = searchTerm.toLowerCase();
+    const inName = p.name.toLowerCase().includes(t) || (p.name_kr||"").toLowerCase().includes(t);
+    const inMembers = p.members.some(m=>m.toLowerCase().includes(t));
+    if(!inName && !inMembers) return false;
+  }
+  return true;
+}
+
+function renderCards(){
+  const wrap = document.getElementById("cardsWrap");
+  const visible = PROJECTS.filter(passesFilter);
+  document.getElementById("emptyState").style.display = visible.length ? "none" : "block";
+  wrap.innerHTML = visible.map(p=>cardHtml(p)).join("");
+  visible.forEach(p=>bindCardEvents(p));
+}
+
+const dotClassByStatus = {1:"blue",2:"amber",3:"green",4:"red"};
+
+function cardHtml(p){
+  const s = state[p.id];
+  const code = String(p.id).padStart(2,"0");
+  const milestonesHtml = s.milestones.length
+    ? s.milestones.map((m,idx)=>`
+      <div class="milestone-item" data-idx="${idx}">
+        <div class="m-text">
+          <span>${m.label} · <b>${MONTHS[m.month]}</b></span>
+          ${m.label_kr ? `<span class="m-kr">${m.label_kr}</span>` : ``}
+        </div>
+        <button class="m-del" data-del="${idx}" data-pid="${p.id}">✕</button>
+      </div>`).join("")
+    : `<div class="milestone-empty">Chưa có mốc triển khai nào. · <span class="kr">등록된 마일스톤이 없습니다.</span></div>`;
+
+  return `
+  <div class="card" data-pid="${p.id}">
+    <div class="card-top">
+      <div class="num">${code}</div>
+      <div class="card-body">
+        <div class="card-title-row">
+          <span class="status-dot dot ${dotClassByStatus[s.status]}"></span>
+          <span class="card-title">${p.name}</span>
+        </div>
+        <div class="card-title-kr">${p.name_kr || ""}</div>
+        <div class="members">
+          ${p.members.map(m=>`<span class="tag">${m}</span>`).join("")}
+        </div>
+
+        <div class="controls-row">
+          <select class="status-select" data-pid="${p.id}">
+            <option value="1" ${s.status==1?"selected":""}>${STATUS_VI[1]} · ${STATUS_KR[1]}</option>
+            <option value="2" ${s.status==2?"selected":""}>${STATUS_VI[2]} · ${STATUS_KR[2]}</option>
+            <option value="3" ${s.status==3?"selected":""}>${STATUS_VI[3]} · ${STATUS_KR[3]}</option>
+            <option value="4" ${s.status==4?"selected":""}>${STATUS_VI[4]} · ${STATUS_KR[4]}</option>
+          </select>
+          <select class="start-select" data-pid="${p.id}">${monthOptions(s.start)}</select>
+          <span class="arrow">→</span>
+          <select class="end-select" data-pid="${p.id}">${monthOptions(s.end)}</select>
+          <div class="progress-row">
+            <input type="range" min="0" max="100" value="${s.progress}" class="progress-range status-${s.status}" data-pid="${p.id}">
+            <span class="progress-pct" data-pid="${p.id}">${s.progress}%</span>
+            <button class="btn update-progress-btn" data-pid="${p.id}">Cập nhật tiến độ · 업데이트</button>
+          </div>
+        </div>
+
+        <div class="section-label">Lộ trình triển khai · <span class="kr">실행 로드맵</span></div>
+        <div class="milestones" data-pid="${p.id}">${milestonesHtml}</div>
+        <div class="add-milestone">
+          <input type="text" placeholder="Thêm mốc công việc... · 마일스톤 추가..." class="milestone-input" data-pid="${p.id}">
+          <select class="milestone-month" data-pid="${p.id}">${monthOptions(0)}</select>
+          <button class="btn add-milestone-btn" data-pid="${p.id}">+ Thêm mốc · 추가</button>
+        </div>
+
+        <div class="section-label">Ghi chú tiến độ · <span class="kr">진행 메모</span></div>
+        <textarea placeholder="Ghi chú tiến độ, vướng mắc... · 진행 상황, 이슈 등을 기록하세요..." class="notes-area" data-pid="${p.id}">${s.notes||""}</textarea>
+        <div class="saved-hint">Tự động lưu trên trình duyệt này. · 이 브라우저에 자동 저장됩니다.</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function bindCardEvents(p){
+  const pid = p.id;
+  const card = document.querySelector(`.card[data-pid="${pid}"]`);
+
+  card.querySelector(".status-select").addEventListener("change", e=>{
+    state[pid].status = Number(e.target.value);
+    render();
+    showToast("Đã lưu trạng thái · 상태 저장됨 (#" + String(pid).padStart(2,"0") + ")");
+  });
+
+  card.querySelector(".start-select").addEventListener("change", e=>{
+    state[pid].start = Number(e.target.value);
+    if(state[pid].start > state[pid].end) state[pid].end = state[pid].start;
+    render();
+    showToast("Đã lưu ngày bắt đầu · 시작일 저장됨 (#" + String(pid).padStart(2,"0") + ")");
+  });
+
+  card.querySelector(".end-select").addEventListener("change", e=>{
+    state[pid].end = Number(e.target.value);
+    if(state[pid].end < state[pid].start) state[pid].start = state[pid].end;
+    render();
+    showToast("Đã lưu ngày kết thúc · 종료일 저장됨 (#" + String(pid).padStart(2,"0") + ")");
+  });
+
+  card.querySelector(".progress-range").addEventListener("input", e=>{
+    // Chỉ hiển thị số % khi kéo, KHÔNG tự lưu / KHÔNG tự đổi trạng thái
+    card.querySelector(".progress-pct").textContent = e.target.value + "%";
+  });
+
+  card.querySelector(".update-progress-btn").addEventListener("click", ()=>{
+    const val = Number(card.querySelector(".progress-range").value);
+    state[pid].progress = val;
+
+    // Nếu đang Tạm dừng, giữ nguyên trạng thái Tạm dừng — không tự đổi.
+    // Chỉ tự tính trạng thái theo % khi dự án KHÔNG ở trạng thái Tạm dừng.
+    if(state[pid].status !== 4){
+      let newStatus;
+      if(val === 0) newStatus = 1;
+      else if(val === 100) newStatus = 3;
+      else newStatus = 2;
+      state[pid].status = newStatus;
+    }
+
+    render();
+    showToast("Đã cập nhật tiến độ " + val + "% · 진행률 " + val + "% 업데이트됨 (#" + String(pid).padStart(2,"0") + ")");
+  });
+
+  card.querySelector(".notes-area").addEventListener("input", e=>{
+    state[pid].notes = e.target.value;
+    saveState();
+  });
+  card.querySelector(".notes-area").addEventListener("blur", e=>{
+    showToast("Đã lưu ghi chú · 메모 저장됨 (#" + String(pid).padStart(2,"0") + ")");
+  });
+
+  card.querySelector(".add-milestone-btn").addEventListener("click", ()=>{
+    const input = card.querySelector(".milestone-input");
+    const monthSel = card.querySelector(".milestone-month");
+    const label = input.value.trim();
+    if(!label) return;
+    state[pid].milestones.push({label, month:Number(monthSel.value)});
+    render();
+    showToast("Đã lưu mốc mới · 마일스톤 저장됨 (#" + String(pid).padStart(2,"0") + ")");
+  });
+  card.querySelectorAll(".m-del").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      const idx = Number(btn.getAttribute("data-del"));
+      state[pid].milestones.splice(idx,1);
+      render();
+      showToast("Đã xoá mốc · 마일스톤 삭제됨 (#" + String(pid).padStart(2,"0") + ")");
+    });
+  });
+}
+
+document.getElementById("searchBox").addEventListener("input", e=>{
+  searchTerm = e.target.value;
+  renderCards();
+});
+
+document.querySelectorAll(".pill").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    document.querySelectorAll(".pill").forEach(b=>b.classList.remove("active"));
+    btn.classList.add("active");
+    activeFilter = btn.getAttribute("data-filter");
+    renderCards();
+  });
+});
+
+render();
+</script>
+</body>
+</html>
