@@ -425,14 +425,23 @@ function cacheLocal(){
   try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){}
 }
 
-function pushProjectUpdate(pid){
+function pushProjectUpdate(pid, labelVi, labelKr){
   cacheLocal();
+  const code = String(pid).padStart(2,"0");
   if(db){
     db.ref("projects/"+pid).set(state[pid])
-      .then(()=>updateSaveStatus(true))
-      .catch(err=>{ console.error(err); updateSaveStatus(false); });
+      .then(()=>{
+        updateSaveStatus(true);
+        showToast("✅ Đồng bộ xong: " + (labelVi||"cập nhật") + " · 동기화 완료: " + (labelKr||"업데이트") + " (#" + code + ")");
+      })
+      .catch(err=>{
+        console.error(err);
+        updateSaveStatus(false);
+        showToast("❌ Đồng bộ thất bại (#" + code + ") — kiểm tra mạng · 동기화 실패 — 네트워크 확인");
+      });
   }else{
     updateSaveStatus(true);
+    showToast("💾 Đã lưu cục bộ: " + (labelVi||"cập nhật") + " · 로컬 저장: " + (labelKr||"업데이트") + " (#" + code + ")");
   }
 }
 
@@ -616,25 +625,22 @@ function bindCardEvents(p){
 
   card.querySelector(".status-select").addEventListener("change", e=>{
     state[pid].status = Number(e.target.value);
-    pushProjectUpdate(pid);
     render();
-    showToast("Đã lưu trạng thái · 상태 저장됨 (#" + String(pid).padStart(2,"0") + ")");
+    pushProjectUpdate(pid, "trạng thái", "상태");
   });
 
   card.querySelector(".start-select").addEventListener("change", e=>{
     state[pid].start = Number(e.target.value);
     if(state[pid].start > state[pid].end) state[pid].end = state[pid].start;
-    pushProjectUpdate(pid);
     render();
-    showToast("Đã lưu ngày bắt đầu · 시작일 저장됨 (#" + String(pid).padStart(2,"0") + ")");
+    pushProjectUpdate(pid, "ngày bắt đầu", "시작일");
   });
 
   card.querySelector(".end-select").addEventListener("change", e=>{
     state[pid].end = Number(e.target.value);
     if(state[pid].end < state[pid].start) state[pid].start = state[pid].end;
-    pushProjectUpdate(pid);
     render();
-    showToast("Đã lưu ngày kết thúc · 종료일 저장됨 (#" + String(pid).padStart(2,"0") + ")");
+    pushProjectUpdate(pid, "ngày kết thúc", "종료일");
   });
 
   card.querySelector(".progress-range").addEventListener("input", e=>{
@@ -657,8 +663,7 @@ function bindCardEvents(p){
     }
 
     render();
-    pushProjectUpdate(pid);
-    showToast("Đã cập nhật tiến độ " + val + "% · 진행률 " + val + "% 업데이트됨 (#" + String(pid).padStart(2,"0") + ")");
+    pushProjectUpdate(pid, "tiến độ " + val + "%", "진행률 " + val + "%");
   });
 
   card.querySelector(".notes-area").addEventListener("input", e=>{
@@ -666,8 +671,7 @@ function bindCardEvents(p){
     cacheLocal();
   });
   card.querySelector(".notes-area").addEventListener("blur", e=>{
-    pushProjectUpdate(pid);
-    showToast("Đã lưu ghi chú · 메모 저장됨 (#" + String(pid).padStart(2,"0") + ")");
+    pushProjectUpdate(pid, "ghi chú", "메모");
   });
 
   card.querySelector(".add-milestone-btn").addEventListener("click", ()=>{
@@ -676,17 +680,15 @@ function bindCardEvents(p){
     const label = input.value.trim();
     if(!label) return;
     state[pid].milestones.push({label, month:Number(monthSel.value)});
-    pushProjectUpdate(pid);
     render();
-    showToast("Đã lưu mốc mới · 마일스톤 저장됨 (#" + String(pid).padStart(2,"0") + ")");
+    pushProjectUpdate(pid, "mốc mới", "새 마일스톤");
   });
   card.querySelectorAll(".m-del").forEach(btn=>{
     btn.addEventListener("click", ()=>{
       const idx = Number(btn.getAttribute("data-del"));
       state[pid].milestones.splice(idx,1);
-      pushProjectUpdate(pid);
       render();
-      showToast("Đã xoá mốc · 마일스톤 삭제됨 (#" + String(pid).padStart(2,"0") + ")");
+      pushProjectUpdate(pid, "xoá mốc", "마일스톤 삭제");
     });
   });
 }
