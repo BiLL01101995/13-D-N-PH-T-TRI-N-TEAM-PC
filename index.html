@@ -196,6 +196,8 @@
   }
   .toast.show{opacity:1;transform:translateY(0);}
 </style>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 </head>
 <body>
 <div class="wrap">
@@ -208,6 +210,7 @@
       <div class="subtitle">Theo dõi trạng thái, tiến độ và ghi chú của từng dự án. Dữ liệu được lưu trên trình duyệt này (localStorage) — mỗi lần cập nhật sẽ tự lưu lại.</div>
       <div class="subtitle-kr">각 프로젝트의 상태, 진행률, 메모를 추적합니다. 데이터는 이 브라우저(localStorage)에 저장되며, 업데이트할 때마다 자동으로 저장됩니다.</div>
       <div class="save-status" id="saveStatus">Chưa có thay đổi nào. · 아직 변경 사항이 없습니다.</div>
+      <div class="save-status" id="modeStatus" style="color:var(--muted);"></div>
     </div>
     <div class="stats">
       <div class="ring-wrap">
@@ -254,6 +257,30 @@
 <div class="toast" id="toast"></div>
 
 <script>
+/* =========================================================================
+   CẤU HÌNH FIREBASE — THAY CÁC GIÁ TRỊ BÊN DƯỚI BẰNG CONFIG THẬT CỦA BẠN
+   Lấy tại: Firebase Console → Project settings → General → Your apps → Web app (</>)
+   Nếu để nguyên "YOUR_API_KEY", trang sẽ tự động chạy ở chế độ CHỈ LƯU CỤC BỘ
+   (localStorage) trên trình duyệt hiện tại — không đồng bộ giữa nhiều người.
+   ========================================================================= */
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyCn5ol3R6kQL4rgbLGLkTByhd6pvFTVWmo",
+  authDomain: "team-pc-rd.firebaseapp.com",
+  databaseURL: "https://team-pc-rd-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "team-pc-rd",
+};
+const FIREBASE_ENABLED = !!(FIREBASE_CONFIG.apiKey && FIREBASE_CONFIG.apiKey !== "YOUR_API_KEY" && FIREBASE_CONFIG.databaseURL);
+
+let db = null;
+if(FIREBASE_ENABLED){
+  try{
+    firebase.initializeApp(FIREBASE_CONFIG);
+    db = firebase.database();
+  }catch(err){
+    console.error("Lỗi khởi tạo Firebase:", err);
+  }
+}
+
 const MONTHS = ["T6/26","T7/26","T8/26","T9/26","T10/26","T11/26","T12/26","T1/27","T2/27","T3/27","T4/27","T5/27","T6/27","T7/27","T8/27","T9/27","T10/27","T11/27","T12/27"];
 const MONTH_COUNT = MONTHS.length; // 19
 const TODAY_INDEX = 2 + (15/31); // 15/8/2026 within Aug/26 (index 2)
@@ -374,30 +401,38 @@ const MILESTONE_TEMPLATES = {
 
 const STORAGE_KEY = "teampc_13duan_progress_v1";
 
-function loadState(){
+function defaultProjectState(pid){
+  const defaultMilestones = (MILESTONE_TEMPLATES[pid] || []).map(m=>({...m}));
+  return {status:1, start:0, end:6, progress:0, notes:"", milestones:defaultMilestones};
+}
+
+function loadLocalState(){
   let raw = null;
   try{ raw = localStorage.getItem(STORAGE_KEY); }catch(e){}
   let saved = {};
   if(raw){ try{ saved = JSON.parse(raw); }catch(e){ saved = {}; } }
   PROJECTS.forEach(p=>{
-    if(!saved[p.id]){
-      const defaultMilestones = (MILESTONE_TEMPLATES[p.id] || []).map(m=>({...m}));
-      saved[p.id] = {status:1, start:0, end:6, progress:0, notes:"", milestones:defaultMilestones};
-    }
+    if(!saved[p.id]) saved[p.id] = defaultProjectState(p.id);
   });
   return saved;
 }
 
-let state = loadState();
+let state = loadLocalState();
 let activeFilter = "all";
 let searchTerm = "";
 
-function saveState(){
-  try{
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+function cacheLocal(){
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){}
+}
+
+function pushProjectUpdate(pid){
+  cacheLocal();
+  if(db){
+    db.ref("projects/"+pid).set(state[pid])
+      .then(()=>updateSaveStatus(true))
+      .catch(err=>{ console.error(err); updateSaveStatus(false); });
+  }else{
     updateSaveStatus(true);
-  }catch(e){
-    updateSaveStatus(false);
   }
 }
 
@@ -433,7 +468,6 @@ function render(){
   renderHeader();
   renderTimeline();
   renderCards();
-  saveState();
 }
 
 function renderHeader(){
@@ -582,6 +616,7 @@ function bindCardEvents(p){
 
   card.querySelector(".status-select").addEventListener("change", e=>{
     state[pid].status = Number(e.target.value);
+    pushProjectUpdate(pid);
     render();
     showToast("Đã lưu trạng thái · 상태 저장됨 (#" + String(pid).padStart(2,"0") + ")");
   });
@@ -589,6 +624,7 @@ function bindCardEvents(p){
   card.querySelector(".start-select").addEventListener("change", e=>{
     state[pid].start = Number(e.target.value);
     if(state[pid].start > state[pid].end) state[pid].end = state[pid].start;
+    pushProjectUpdate(pid);
     render();
     showToast("Đã lưu ngày bắt đầu · 시작일 저장됨 (#" + String(pid).padStart(2,"0") + ")");
   });
@@ -596,6 +632,7 @@ function bindCardEvents(p){
   card.querySelector(".end-select").addEventListener("change", e=>{
     state[pid].end = Number(e.target.value);
     if(state[pid].end < state[pid].start) state[pid].start = state[pid].end;
+    pushProjectUpdate(pid);
     render();
     showToast("Đã lưu ngày kết thúc · 종료일 저장됨 (#" + String(pid).padStart(2,"0") + ")");
   });
@@ -620,14 +657,16 @@ function bindCardEvents(p){
     }
 
     render();
+    pushProjectUpdate(pid);
     showToast("Đã cập nhật tiến độ " + val + "% · 진행률 " + val + "% 업데이트됨 (#" + String(pid).padStart(2,"0") + ")");
   });
 
   card.querySelector(".notes-area").addEventListener("input", e=>{
     state[pid].notes = e.target.value;
-    saveState();
+    cacheLocal();
   });
   card.querySelector(".notes-area").addEventListener("blur", e=>{
+    pushProjectUpdate(pid);
     showToast("Đã lưu ghi chú · 메모 저장됨 (#" + String(pid).padStart(2,"0") + ")");
   });
 
@@ -637,6 +676,7 @@ function bindCardEvents(p){
     const label = input.value.trim();
     if(!label) return;
     state[pid].milestones.push({label, month:Number(monthSel.value)});
+    pushProjectUpdate(pid);
     render();
     showToast("Đã lưu mốc mới · 마일스톤 저장됨 (#" + String(pid).padStart(2,"0") + ")");
   });
@@ -644,6 +684,7 @@ function bindCardEvents(p){
     btn.addEventListener("click", ()=>{
       const idx = Number(btn.getAttribute("data-del"));
       state[pid].milestones.splice(idx,1);
+      pushProjectUpdate(pid);
       render();
       showToast("Đã xoá mốc · 마일스톤 삭제됨 (#" + String(pid).padStart(2,"0") + ")");
     });
@@ -664,7 +705,40 @@ document.querySelectorAll(".pill").forEach(btn=>{
   });
 });
 
+function setModeStatus(){
+  const el = document.getElementById("modeStatus");
+  if(!el) return;
+  if(FIREBASE_ENABLED && db){
+    el.innerHTML = "🔥 Đang đồng bộ trực tuyến qua Firebase (nhiều người cùng xem/sửa) · <span class=\"kr\">Firebase 실시간 동기화 중 (여러 명이 함께 보기/수정 가능)</span>";
+  }else{
+    el.innerHTML = "💾 Chỉ lưu cục bộ trên trình duyệt này (chưa cấu hình Firebase) · <span class=\"kr\">이 브라우저에만 저장됨 (Firebase 미설정)</span>";
+  }
+}
+
 render();
+setModeStatus();
+
+if(db){
+  db.ref("projects").on("value", snap=>{
+    const data = snap.val() || {};
+    PROJECTS.forEach(p=>{
+      if(data[p.id]){
+        const merged = Object.assign(defaultProjectState(p.id), data[p.id]);
+        if(!Array.isArray(merged.milestones)) merged.milestones = [];
+        state[p.id] = merged;
+      }else if(!state[p.id]){
+        state[p.id] = defaultProjectState(p.id);
+        db.ref("projects/"+p.id).set(state[p.id]).catch(()=>{});
+      }
+    });
+    cacheLocal();
+    render();
+  }, err=>{
+    console.error("Lỗi đọc dữ liệu Firebase:", err);
+    const el = document.getElementById("modeStatus");
+    if(el) el.innerHTML = "⚠️ Không kết nối được Firebase (kiểm tra cấu hình/quy tắc bảo mật) · <span class=\"kr\">Firebase 연결 실패 (설정/보안 규칙 확인)</span>";
+  });
+}
 </script>
 </body>
 </html>
