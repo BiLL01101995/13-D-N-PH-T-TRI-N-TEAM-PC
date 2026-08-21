@@ -150,12 +150,6 @@
     border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:13px;background:#fbfbfd;color:var(--text);
   }
   .arrow{color:var(--muted);font-size:13px;}
-  .progress-row{display:flex;align-items:center;gap:10px;flex:1;min-width:200px;}
-  .progress-row input[type=range]{flex:1;accent-color:var(--accent);}
-  .progress-row input[type=range].status-1{accent-color:var(--accent);}
-  .progress-row input[type=range].status-2{accent-color:var(--amber);}
-  .progress-row input[type=range].status-3{accent-color:var(--green);}
-  .progress-row input[type=range].status-4{accent-color:var(--red-dark);}
   .progress-pct{font-size:13px;font-weight:600;min-width:32px;text-align:right;}
 
   .section-label{
@@ -173,6 +167,40 @@
   .milestone-empty{color:var(--muted);font-size:13px;padding:6px 0;}
   .add-milestone{display:flex;gap:8px;margin-top:8px;}
   .add-milestone input[type=text]{
+    flex:1;border:1px solid var(--line);border-radius:8px;padding:9px 12px;font-size:13px;background:#fbfbfd;color:var(--text);
+  }
+
+  /* ===== Dự án đề xuất (subprojects) ===== */
+  .progress-auto-row{display:flex;align-items:center;gap:12px;flex:1;min-width:220px;}
+  .progress-track{flex:1;height:10px;background:var(--accent-soft);border-radius:6px;overflow:hidden;}
+  .progress-fill{height:100%;border-radius:6px;transition:width .25s ease;}
+  .progress-fill.status-1{background:var(--accent);}
+  .progress-fill.status-2{background:var(--amber);}
+  .progress-fill.status-3{background:var(--green);}
+  .progress-fill.status-4{background:var(--red-dark);}
+  .progress-auto-pct{font-size:13px;font-weight:700;min-width:36px;text-align:right;}
+  .progress-auto-hint{font-size:11px;color:var(--muted);white-space:nowrap;}
+  .subprojects{display:flex;flex-direction:column;gap:8px;}
+  .subproject-item{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    background:#f7f8fb;border:1px solid var(--line);border-radius:8px;padding:8px 12px;font-size:13px;
+  }
+  .subproject-item.done{background:#eafaf1;border-color:#bfead2;}
+  .sp-check{display:flex;align-items:center;gap:10px;flex:1;min-width:0;cursor:pointer;}
+  .sp-check input[type=checkbox]{width:16px;height:16px;flex:none;accent-color:var(--green);cursor:pointer;}
+  .sp-text{display:flex;flex-direction:column;gap:1px;min-width:0;}
+  .sp-text .sp-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .sp-text .sp-kr{font-size:11.5px;color:var(--muted);}
+  .subproject-item.done .sp-text .sp-name{text-decoration:line-through;color:var(--muted);}
+  .sp-right{display:flex;align-items:center;gap:8px;flex:none;}
+  .sp-done-badge{
+    font-size:11px;font-weight:700;color:var(--green);background:#d9f5e6;
+    padding:3px 10px;border-radius:999px;white-space:nowrap;
+  }
+  .sp-del{cursor:pointer;color:var(--muted);border:none;background:none;font-size:15px;}
+  .subproject-empty{color:var(--muted);font-size:13px;padding:6px 0;}
+  .add-subproject{display:flex;gap:8px;margin-top:8px;}
+  .add-subproject input[type=text]{
     flex:1;border:1px solid var(--line);border-radius:8px;padding:9px 12px;font-size:13px;background:#fbfbfd;color:var(--text);
   }
   .btn{
@@ -403,7 +431,27 @@ const STORAGE_KEY = "teampc_13duan_progress_v1";
 
 function defaultProjectState(pid){
   const defaultMilestones = (MILESTONE_TEMPLATES[pid] || []).map(m=>({...m}));
-  return {status:1, start:0, end:6, progress:0, notes:"", milestones:defaultMilestones};
+  return {status:1, start:0, end:6, progress:0, notes:"", milestones:defaultMilestones, subprojects:[]};
+}
+
+// % tiến độ = số dự án đề xuất đã tích "Hoàn thành" / tổng số dự án đề xuất đã nhập
+function calcProgress(pid){
+  const arr = (state[pid] && state[pid].subprojects) || [];
+  if(!arr.length) return 0;
+  const done = arr.filter(x=>x.done).length;
+  return Math.round((done/arr.length)*100);
+}
+
+// Tính lại % và trạng thái (giữ nguyên "Tạm dừng" nếu đang được đặt thủ công)
+function recalcProgressAndStatus(pid){
+  const s = state[pid];
+  const pct = calcProgress(pid);
+  s.progress = pct;
+  if(s.status !== 4){
+    if(pct === 0) s.status = 1;
+    else if(pct === 100) s.status = 3;
+    else s.status = 2;
+  }
 }
 
 function loadLocalState(){
@@ -413,6 +461,7 @@ function loadLocalState(){
   if(raw){ try{ saved = JSON.parse(raw); }catch(e){ saved = {}; } }
   PROJECTS.forEach(p=>{
     if(!saved[p.id]) saved[p.id] = defaultProjectState(p.id);
+    if(!Array.isArray(saved[p.id].subprojects)) saved[p.id].subprojects = [];
   });
   return saved;
 }
@@ -572,6 +621,23 @@ function cardHtml(p){
       </div>`).join("")
     : `<div class="milestone-empty">Chưa có mốc triển khai nào. · <span class="kr">등록된 마일스톤이 없습니다.</span></div>`;
 
+  const subprojectsHtml = s.subprojects.length
+    ? s.subprojects.map((sp,idx)=>`
+      <div class="subproject-item ${sp.done?"done":""}" data-idx="${idx}">
+        <label class="sp-check">
+          <input type="checkbox" class="sp-checkbox" data-idx="${idx}" data-pid="${p.id}" ${sp.done?"checked":""}>
+          <div class="sp-text">
+            <span class="sp-name">${sp.label}</span>
+            ${sp.label_kr ? `<span class="sp-kr">${sp.label_kr}</span>` : ``}
+          </div>
+        </label>
+        <div class="sp-right">
+          ${sp.done ? `<span class="sp-done-badge">Hoàn thành · <span class="kr">완료</span></span>` : ``}
+          <button class="sp-del" data-del="${idx}" data-pid="${p.id}">✕</button>
+        </div>
+      </div>`).join("")
+    : `<div class="subproject-empty">Chưa có dự án đề xuất nào. · <span class="kr">등록된 제안 프로젝트가 없습니다.</span></div>`;
+
   return `
   <div class="card" data-pid="${p.id}">
     <div class="card-top">
@@ -596,11 +662,19 @@ function cardHtml(p){
           <select class="start-select" data-pid="${p.id}">${monthOptions(s.start)}</select>
           <span class="arrow">→</span>
           <select class="end-select" data-pid="${p.id}">${monthOptions(s.end)}</select>
-          <div class="progress-row">
-            <input type="range" min="0" max="100" value="${s.progress}" class="progress-range status-${s.status}" data-pid="${p.id}">
-            <span class="progress-pct" data-pid="${p.id}">${s.progress}%</span>
-            <button class="btn update-progress-btn" data-pid="${p.id}">Cập nhật tiến độ · 업데이트</button>
+          <div class="progress-auto-row">
+            <div class="progress-track"><div class="progress-fill status-${s.status}" style="width:${s.progress}%"></div></div>
+            <span class="progress-auto-pct">${s.progress}%</span>
+            <span class="progress-auto-hint">Tự động tính theo dự án đề xuất · <span class="kr">제안 프로젝트 기준 자동 계산</span></span>
           </div>
+        </div>
+
+        <div class="section-label">Danh sách dự án đề xuất · <span class="kr">제안 프로젝트 목록</span></div>
+        <div class="subprojects" data-pid="${p.id}">${subprojectsHtml}</div>
+        <div class="add-subproject">
+          <input type="text" placeholder="Tên dự án đề xuất (VI)... · 제안 프로젝트명 (한글)..." class="subproject-input" data-pid="${p.id}">
+          <input type="text" placeholder="Tên tiếng Hàn (tuỳ chọn) · 한글명 (선택)" class="subproject-input-kr" data-pid="${p.id}">
+          <button class="btn add-subproject-btn" data-pid="${p.id}">+ Thêm dự án · 추가</button>
         </div>
 
         <div class="section-label">Lộ trình triển khai · <span class="kr">실행 로드맵</span></div>
@@ -643,27 +717,36 @@ function bindCardEvents(p){
     pushProjectUpdate(pid, "ngày kết thúc", "종료일");
   });
 
-  card.querySelector(".progress-range").addEventListener("input", e=>{
-    // Chỉ hiển thị số % khi kéo, KHÔNG tự lưu / KHÔNG tự đổi trạng thái
-    card.querySelector(".progress-pct").textContent = e.target.value + "%";
+  card.querySelectorAll(".sp-checkbox").forEach(cb=>{
+    cb.addEventListener("change", e=>{
+      const idx = Number(e.target.getAttribute("data-idx"));
+      state[pid].subprojects[idx].done = e.target.checked;
+      recalcProgressAndStatus(pid);
+      render();
+      const label = state[pid].subprojects[idx].label;
+      pushProjectUpdate(pid, (e.target.checked?"hoàn thành: ":"bỏ tích: ") + label, "진행률 " + state[pid].progress + "%");
+    });
   });
 
-  card.querySelector(".update-progress-btn").addEventListener("click", ()=>{
-    const val = Number(card.querySelector(".progress-range").value);
-    state[pid].progress = val;
-
-    // Nếu đang Tạm dừng, giữ nguyên trạng thái Tạm dừng — không tự đổi.
-    // Chỉ tự tính trạng thái theo % khi dự án KHÔNG ở trạng thái Tạm dừng.
-    if(state[pid].status !== 4){
-      let newStatus;
-      if(val === 0) newStatus = 1;
-      else if(val === 100) newStatus = 3;
-      else newStatus = 2;
-      state[pid].status = newStatus;
-    }
-
+  card.querySelector(".add-subproject-btn").addEventListener("click", ()=>{
+    const input = card.querySelector(".subproject-input");
+    const inputKr = card.querySelector(".subproject-input-kr");
+    const label = input.value.trim();
+    const labelKr = inputKr.value.trim();
+    if(!label) return;
+    state[pid].subprojects.push({label, label_kr:labelKr, done:false});
+    recalcProgressAndStatus(pid);
     render();
-    pushProjectUpdate(pid, "tiến độ " + val + "%", "진행률 " + val + "%");
+    pushProjectUpdate(pid, "dự án đề xuất mới", "신규 제안 프로젝트");
+  });
+  card.querySelectorAll(".sp-del").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      const idx = Number(btn.getAttribute("data-del"));
+      state[pid].subprojects.splice(idx,1);
+      recalcProgressAndStatus(pid);
+      render();
+      pushProjectUpdate(pid, "xoá dự án đề xuất", "제안 프로젝트 삭제");
+    });
   });
 
   card.querySelector(".notes-area").addEventListener("input", e=>{
@@ -727,6 +810,7 @@ if(db){
       if(data[p.id]){
         const merged = Object.assign(defaultProjectState(p.id), data[p.id]);
         if(!Array.isArray(merged.milestones)) merged.milestones = [];
+        if(!Array.isArray(merged.subprojects)) merged.subprojects = [];
         state[p.id] = merged;
       }else if(!state[p.id]){
         state[p.id] = defaultProjectState(p.id);
