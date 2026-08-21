@@ -156,19 +156,6 @@
     font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:700;
     margin-top:20px;margin-bottom:8px;
   }
-  .milestones{display:flex;flex-direction:column;gap:8px;}
-  .milestone-item{
-    display:flex;align-items:center;justify-content:space-between;gap:10px;
-    background:#f7f8fb;border:1px solid var(--line);border-radius:8px;padding:8px 12px;font-size:13px;
-  }
-  .milestone-item .m-text{display:flex;flex-direction:column;gap:1px;}
-  .milestone-item .m-text .m-kr{font-size:11.5px;color:var(--muted);}
-  .milestone-item .m-del{cursor:pointer;color:var(--muted);border:none;background:none;font-size:15px;}
-  .milestone-empty{color:var(--muted);font-size:13px;padding:6px 0;}
-  .add-milestone{display:flex;gap:8px;margin-top:8px;}
-  .add-milestone input[type=text]{
-    flex:1;border:1px solid var(--line);border-radius:8px;padding:9px 12px;font-size:13px;background:#fbfbfd;color:var(--text);
-  }
 
   /* ===== Dự án đề xuất (subprojects) ===== */
   .progress-auto-row{display:flex;align-items:center;gap:12px;flex:1;min-width:220px;}
@@ -332,106 +319,10 @@ const PROJECTS = [
   {id:13, name:"Xây dựng web quản lý source code (tương tự GitHub, Bitbucket)", name_kr:"소스코드 관리 웹 구축 (GitHub, Bitbucket 유사)", members:["Nguyễn Văn Minh","Trần Anh Tuấn"]},
 ];
 
-// Lộ trình gợi ý cho từng dự án, T8/26(index2) → T12/26(index6). Có thể sửa/xoá trên giao diện.
-const MILESTONE_TEMPLATES = {
-  1: [
-    {label:"Khảo sát nhu cầu & xác định phạm vi", label_kr:"요구사항 조사 및 범위 확정", month:2},
-    {label:"Thiết kế cơ sở dữ liệu & giao diện", label_kr:"데이터베이스 및 UI 설계", month:3},
-    {label:"Phát triển module quản lý công việc", label_kr:"업무 관리 모듈 개발", month:4},
-    {label:"Kiểm thử nội bộ & sửa lỗi", label_kr:"내부 테스트 및 버그 수정", month:5},
-    {label:"Triển khai thử nghiệm cho 1 phòng ban", label_kr:"1개 부서 대상 시범 운영", month:6},
-  ],
-  2: [
-    {label:"Thu thập tài liệu & cài đặt môi trường thử nghiệm", label_kr:"자료 수집 및 테스트 환경 구축", month:2},
-    {label:"Thử nghiệm các tính năng cốt lõi", label_kr:"핵심 기능 테스트", month:3},
-    {label:"Đánh giá khả năng tích hợp", label_kr:"통합 가능성 평가", month:4},
-    {label:"Viết báo cáo tổng hợp", label_kr:"종합 보고서 작성", month:5},
-    {label:"Trình bày kết quả & đề xuất hướng ứng dụng", label_kr:"결과 발표 및 활용 방안 제안", month:6},
-  ],
-  3: [
-    {label:"Xác định yêu cầu mô phỏng", label_kr:"시뮬레이션 요구사항 정의", month:2},
-    {label:"Thiết kế kiến trúc phần mềm", label_kr:"소프트웨어 아키텍처 설계", month:3},
-    {label:"Phát triển engine mô phỏng", label_kr:"시뮬레이션 엔진 개발", month:4},
-    {label:"Kiểm thử với dữ liệu thực tế", label_kr:"실제 데이터로 테스트", month:5},
-    {label:"Hoàn thiện bản demo đầu tiên", label_kr:"1차 데모 완성", month:6},
-  ],
-  4: [
-    {label:"Khảo sát công cụ thiết kế 3D phù hợp", label_kr:"적합한 3D 설계 도구 조사", month:2},
-    {label:"Xây dựng thư viện linh kiện 3D", label_kr:"3D 부품 라이브러리 구축", month:3},
-    {label:"Thiết kế mẫu tủ điện 3D đầu tiên", label_kr:"1차 전기 캐비닛 3D 모델 설계", month:4},
-    {label:"Review & điều chỉnh theo phản hồi", label_kr:"검토 및 피드백 반영", month:5},
-    {label:"Chuẩn hóa quy trình thiết kế 3D", label_kr:"3D 설계 프로세스 표준화", month:6},
-  ],
-  5: [
-    {label:"Xác định phạm vi & mục tiêu dự án", label_kr:"프로젝트 범위 및 목표 설정", month:2},
-    {label:"Lập kế hoạch triển khai chi tiết", label_kr:"세부 실행 계획 수립", month:3},
-    {label:"Triển khai giai đoạn 1", label_kr:"1단계 실행", month:4},
-    {label:"Đánh giá tiến độ giữa kỳ", label_kr:"중간 진행 평가", month:5},
-    {label:"Tổng kết giai đoạn đầu", label_kr:"1차 단계 마무리", month:6},
-  ],
-  6: [
-    {label:"Lên chủ đề & nội dung seminar", label_kr:"세미나 주제 및 내용 기획", month:2},
-    {label:"Chuẩn bị tài liệu & slide", label_kr:"자료 및 슬라이드 준비", month:3},
-    {label:"Seminar thử nghiệm nội bộ", label_kr:"사내 시범 세미나", month:4},
-    {label:"Điều chỉnh nội dung theo phản hồi", label_kr:"피드백에 따른 내용 수정", month:5},
-    {label:"Tổ chức seminar chính thức", label_kr:"정식 세미나 개최", month:6},
-  ],
-  7: [
-    {label:"Khảo sát yêu cầu kỹ thuật", label_kr:"기술 요구사항 조사", month:2},
-    {label:"Thiết kế mạch & sơ đồ nguyên lý", label_kr:"회로 및 원리도 설계", month:3},
-    {label:"Làm mạch thử nghiệm (prototype)", label_kr:"시제품 회로 제작", month:4},
-    {label:"Kiểm thử & đo đạc thông số", label_kr:"테스트 및 파라미터 측정", month:5},
-    {label:"Hoàn thiện phiên bản thử nghiệm đầu tiên", label_kr:"1차 시제품 완성", month:6},
-  ],
-  8: [
-    {label:"Nghiên cứu giao thức Modbus/EtherCAT", label_kr:"Modbus/EtherCAT 프로토콜 연구", month:2},
-    {label:"Thiết kế phần cứng terminal", label_kr:"터미널 하드웨어 설계", month:3},
-    {label:"Phát triển firmware giao tiếp", label_kr:"통신 펌웨어 개발", month:4},
-    {label:"Kiểm thử kết nối với PLC thực tế", label_kr:"실제 PLC 연결 테스트", month:5},
-    {label:"Hoàn thiện bản mẫu terminal", label_kr:"터미널 시제품 완성", month:6},
-  ],
-  9: [
-    {label:"Khảo sát nền tảng phần cứng giá rẻ", label_kr:"저가형 하드웨어 플랫폼 조사", month:2},
-    {label:"Thiết kế kiến trúc phần mềm điều khiển", label_kr:"제어 소프트웨어 아키텍처 설계", month:3},
-    {label:"Phát triển driver & giao diện điều khiển", label_kr:"드라이버 및 제어 인터페이스 개발", month:4},
-    {label:"Kiểm thử trên Windows/Linux", label_kr:"Windows/Linux 환경 테스트", month:5},
-    {label:"Hoàn thiện bộ điều khiển thử nghiệm", label_kr:"테스트용 컨트롤러 완성", month:6},
-  ],
-  10: [
-    {label:"Lập kế hoạch khảo sát dây chuyền", label_kr:"라인 조사 계획 수립", month:2},
-    {label:"Khảo sát thực tế tại nhà máy SDV/SEV/SEVT", label_kr:"SDV/SEV/SEVT 현장 조사", month:3},
-    {label:"Tổng hợp dữ liệu & vấn đề phát sinh", label_kr:"데이터 및 발생 이슈 정리", month:4},
-    {label:"Đề xuất giải pháp cải tiến", label_kr:"개선 방안 제안", month:5},
-    {label:"Báo cáo tổng kết line tour", label_kr:"라인 투어 결과 보고", month:6},
-  ],
-  11: [
-    {label:"Xác định các thuật toán xử lý ảnh cần thiết", label_kr:"필요한 이미지 처리 알고리즘 정의", month:2},
-    {label:"Xây dựng module xử lý ảnh cơ bản", label_kr:"기본 이미지 처리 모듈 구축", month:3},
-    {label:"Tích hợp thuật toán nhận diện/phát hiện lỗi", label_kr:"인식/결함 검출 알고리즘 통합", month:4},
-    {label:"Kiểm thử với dữ liệu ảnh thực tế", label_kr:"실제 이미지 데이터로 테스트", month:5},
-    {label:"Hoàn thiện phiên bản thư viện đầu tiên", label_kr:"1차 라이브러리 버전 완성", month:6},
-  ],
-  12: [
-    {label:"Khảo sát yêu cầu ứng dụng PLC", label_kr:"PLC 적용 요구사항 조사", month:2},
-    {label:"Thiết kế logic điều khiển", label_kr:"제어 로직 설계", month:3},
-    {label:"Lập trình & mô phỏng chương trình PLC", label_kr:"PLC 프로그램 작성 및 시뮬레이션", month:4},
-    {label:"Kiểm thử trên phần cứng thực tế", label_kr:"실제 하드웨어 테스트", month:5},
-    {label:"Hoàn thiện & bàn giao chương trình PLC", label_kr:"PLC 프로그램 완성 및 인수인계", month:6},
-  ],
-  13: [
-    {label:"Khảo sát yêu cầu & chọn công nghệ", label_kr:"요구사항 조사 및 기술 선정", month:2},
-    {label:"Thiết kế kiến trúc hệ thống", label_kr:"시스템 아키텍처 설계", month:3},
-    {label:"Phát triển tính năng quản lý repository cơ bản", label_kr:"기본 저장소 관리 기능 개발", month:4},
-    {label:"Kiểm thử & vá lỗi bảo mật", label_kr:"테스트 및 보안 취약점 패치", month:5},
-    {label:"Triển khai bản thử nghiệm nội bộ", label_kr:"사내 시범 배포", month:6},
-  ],
-};
-
 const STORAGE_KEY = "teampc_13duan_progress_v1";
 
 function defaultProjectState(pid){
-  const defaultMilestones = (MILESTONE_TEMPLATES[pid] || []).map(m=>({...m}));
-  return {status:1, start:0, end:6, progress:0, notes:"", milestones:defaultMilestones, subprojects:[]};
+  return {status:1, start:0, end:6, progress:0, notes:"", subprojects:[]};
 }
 
 // % tiến độ = số dự án đề xuất đã tích "Hoàn thành" / tổng số dự án đề xuất đã nhập
@@ -610,17 +501,6 @@ const dotClassByStatus = {1:"blue",2:"amber",3:"green",4:"red"};
 function cardHtml(p){
   const s = state[p.id];
   const code = String(p.id).padStart(2,"0");
-  const milestonesHtml = s.milestones.length
-    ? s.milestones.map((m,idx)=>`
-      <div class="milestone-item" data-idx="${idx}">
-        <div class="m-text">
-          <span>${m.label} · <b>${MONTHS[m.month]}</b></span>
-          ${m.label_kr ? `<span class="m-kr">${m.label_kr}</span>` : ``}
-        </div>
-        <button class="m-del" data-del="${idx}" data-pid="${p.id}">✕</button>
-      </div>`).join("")
-    : `<div class="milestone-empty">Chưa có mốc triển khai nào. · <span class="kr">등록된 마일스톤이 없습니다.</span></div>`;
-
   const subprojectsHtml = s.subprojects.length
     ? s.subprojects.map((sp,idx)=>`
       <div class="subproject-item ${sp.done?"done":""}" data-idx="${idx}">
@@ -675,14 +555,6 @@ function cardHtml(p){
           <input type="text" placeholder="Tên dự án đề xuất (VI)... · 제안 프로젝트명 (한글)..." class="subproject-input" data-pid="${p.id}">
           <input type="text" placeholder="Tên tiếng Hàn (tuỳ chọn) · 한글명 (선택)" class="subproject-input-kr" data-pid="${p.id}">
           <button class="btn add-subproject-btn" data-pid="${p.id}">+ Thêm dự án · 추가</button>
-        </div>
-
-        <div class="section-label">Lộ trình triển khai · <span class="kr">실행 로드맵</span></div>
-        <div class="milestones" data-pid="${p.id}">${milestonesHtml}</div>
-        <div class="add-milestone">
-          <input type="text" placeholder="Thêm mốc công việc... · 마일스톤 추가..." class="milestone-input" data-pid="${p.id}">
-          <select class="milestone-month" data-pid="${p.id}">${monthOptions(0)}</select>
-          <button class="btn add-milestone-btn" data-pid="${p.id}">+ Thêm mốc · 추가</button>
         </div>
 
         <div class="section-label">Ghi chú tiến độ · <span class="kr">진행 메모</span></div>
@@ -757,23 +629,6 @@ function bindCardEvents(p){
     pushProjectUpdate(pid, "ghi chú", "메모");
   });
 
-  card.querySelector(".add-milestone-btn").addEventListener("click", ()=>{
-    const input = card.querySelector(".milestone-input");
-    const monthSel = card.querySelector(".milestone-month");
-    const label = input.value.trim();
-    if(!label) return;
-    state[pid].milestones.push({label, month:Number(monthSel.value)});
-    render();
-    pushProjectUpdate(pid, "mốc mới", "새 마일스톤");
-  });
-  card.querySelectorAll(".m-del").forEach(btn=>{
-    btn.addEventListener("click", ()=>{
-      const idx = Number(btn.getAttribute("data-del"));
-      state[pid].milestones.splice(idx,1);
-      render();
-      pushProjectUpdate(pid, "xoá mốc", "마일스톤 삭제");
-    });
-  });
 }
 
 document.getElementById("searchBox").addEventListener("input", e=>{
@@ -809,7 +664,6 @@ if(db){
     PROJECTS.forEach(p=>{
       if(data[p.id]){
         const merged = Object.assign(defaultProjectState(p.id), data[p.id]);
-        if(!Array.isArray(merged.milestones)) merged.milestones = [];
         if(!Array.isArray(merged.subprojects)) merged.subprojects = [];
         state[p.id] = merged;
       }else if(!state[p.id]){
