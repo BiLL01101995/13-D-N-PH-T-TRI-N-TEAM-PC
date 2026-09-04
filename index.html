@@ -114,6 +114,33 @@
   .tl-bar-fill.status-4{background:var(--red-dark);}
   .tl-pct{font-size:11px;color:var(--muted);font-weight:600;margin-left:6px;}
 
+  /* ===== Add project ===== */
+  .add-project-row{display:flex;gap:10px;flex-wrap:wrap;}
+  .add-project-row input[type=text]{
+    flex:1;min-width:200px;border:1px solid var(--line);border-radius:8px;padding:10px 12px;
+    font-size:13.5px;background:#fbfbfd;color:var(--text);
+  }
+  .name-edit-btn{
+    margin-left:auto;background:none;border:1px solid var(--line);color:var(--muted);
+    font-size:11.5px;padding:5px 12px;border-radius:999px;cursor:pointer;white-space:nowrap;
+  }
+  .name-edit-btn:hover{background:#f2f4f8;}
+  .name-edit-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;}
+  .name-edit-row input[type=text]{
+    flex:1;min-width:180px;border:1px solid var(--line);border-radius:8px;padding:9px 12px;
+    font-size:13px;background:#fbfbfd;color:var(--text);
+  }
+  .btn-ghost{
+    background:none;border:1px solid var(--line);color:var(--muted);border-radius:8px;
+    padding:9px 14px;font-size:13px;cursor:pointer;white-space:nowrap;
+  }
+  .btn-ghost:hover{background:#f2f4f8;}
+  .project-del{
+    background:none;border:1px solid var(--line);color:var(--red-dark);
+    font-size:11.5px;padding:5px 12px;border-radius:999px;cursor:pointer;white-space:nowrap;
+  }
+  .project-del:hover{background:#fdeceb;border-color:#f6c8c9;}
+
   /* ===== Filters ===== */
   .filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px;}
   .search{
@@ -141,8 +168,24 @@
   .card-title-kr{font-size:12.5px;color:var(--muted);margin-top:2px;margin-left:18px;}
   .members{margin-top:10px;display:flex;flex-wrap:wrap;gap:6px;}
   .tag{
-    background:#eef2fb;color:var(--accent);font-size:12px;padding:5px 11px;border-radius:999px;font-weight:500;
+    background:#eef2fb;color:var(--accent);font-size:12px;padding:5px 8px 5px 11px;border-radius:999px;font-weight:500;
+    display:inline-flex;align-items:center;gap:6px;
   }
+  .tag.tag-lead{background:var(--accent);color:#fff;font-weight:700;}
+  .tag-del{
+    cursor:pointer;color:inherit;opacity:.55;border:none;background:none;font-size:12px;padding:0;line-height:1;
+  }
+  .tag-del:hover{opacity:1;}
+  .add-member{display:flex;gap:8px;margin-top:8px;}
+  .add-member input[type=text]{
+    flex:1;border:1px solid var(--line);border-radius:8px;padding:9px 12px;font-size:13px;background:#fbfbfd;color:var(--text);
+  }
+  .lead-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:2px;}
+  .lead-badge{
+    font-size:12px;font-weight:700;color:#fff;background:var(--accent);
+    padding:5px 12px;border-radius:999px;white-space:nowrap;
+  }
+  .lead-badge.lead-empty{background:#eef0f5;color:var(--muted);font-weight:600;}
   .controls-row{
     display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-top:16px;
   }
@@ -219,7 +262,7 @@
 
   <div class="header">
     <div>
-      <div class="eyebrow">TEAM PC · TOP ENGINEERING VINA · 13 DỰ ÁN ĐĂNG KÝ · 등록 프로젝트 13건</div>
+      <div class="eyebrow">TEAM PC · TOP ENGINEERING VINA · <span id="projectCountVi">13</span> DỰ ÁN ĐĂNG KÝ · 등록 프로젝트 <span id="projectCountKr">13</span>건</div>
       <div class="title">Bảng điều khiển tiến độ dự án</div>
       <div class="title-kr">프로젝트 진행 현황판</div>
       <div class="subtitle">Theo dõi trạng thái, tiến độ và ghi chú của từng dự án. Dữ liệu được lưu trên trình duyệt này (localStorage) — mỗi lần cập nhật sẽ tự lưu lại.</div>
@@ -252,6 +295,16 @@
     <div class="hint" id="tlHint">Tháng 6/2026 → tháng 12/2027 · vạch đỏ = hôm nay · 2026년 6월 → 2027년 12월 · 빨간선 = 오늘</div>
     <div class="tl-scroll">
       <div class="tl" id="tlWrap"></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Thêm dự án mới · <span class="kr">신규 프로젝트 추가</span></h2>
+    <div class="hint">Danh sách dự án có thể tuỳ chỉnh — thêm dự án mới hoặc xoá bớt dự án không cần thiết. · 프로젝트 목록은 자유롭게 수정할 수 있습니다 — 새 프로젝트를 추가하거나 필요 없는 프로젝트를 삭제하세요.</div>
+    <div class="add-project-row">
+      <input type="text" id="newProjectName" placeholder="Tên dự án (VI)... · 프로젝트명 (베트남어)...">
+      <input type="text" id="newProjectNameKr" placeholder="Tên tiếng Hàn (tuỳ chọn) · 한글명 (선택)">
+      <button class="btn" id="addProjectBtn">+ Thêm dự án · 프로젝트 추가</button>
     </div>
   </div>
 
@@ -303,7 +356,10 @@ const TODAY_INDEX = 2 + (15/31); // 15/8/2026 within Aug/26 (index 2)
 const STATUS_VI = {1:"Chưa bắt đầu",2:"Đang thực hiện",3:"Hoàn thành",4:"Tạm dừng"};
 const STATUS_KR = {1:"시작 전",2:"진행 중",3:"완료",4:"보류"};
 
-const PROJECTS = [
+/* Danh sách 13 dự án ban đầu — chỉ dùng làm dữ liệu khởi tạo (seed) lần đầu tiên.
+   Sau đó toàn bộ danh sách dự án (thêm/xoá/đổi tên) được lưu trong "state" và
+   có thể thay đổi tự do ngay trên giao diện. */
+const DEFAULT_PROJECTS = [
   {id:1, name:"Xây dựng phần mềm quản lý công việc trong CÔNG TY", name_kr:"사내 업무 관리 소프트웨어 구축", members:["Nguyễn Văn Được","Nguyễn Văn Minh","Nguyễn Phương Thanh","Bùi Văn Hợi (BILL)","Trần Anh Tuấn","Lê Hoàng Anh"]},
   {id:2, name:"Tìm hiểu EQX.Platform", name_kr:"EQX.Platform 조사", members:["Nguyễn Văn Minh","Lê Hoài Nam"]},
   {id:3, name:"Làm phần mềm giả lập máy (Machine Simulator)", name_kr:"기계 시뮬레이터 소프트웨어 개발", members:["Lê Hoài Nam","Nguyễn Văn Minh","Lương Đức Mạnh","Nguyễn Văn Được","Bùi Văn Hợi (BILL)","Lê Hoàng Anh"]},
@@ -321,8 +377,26 @@ const PROJECTS = [
 
 const STORAGE_KEY = "teampc_13duan_progress_v1";
 
-function defaultProjectState(pid){
-  return {status:1, start:0, end:6, progress:0, notes:"", subprojects:[]};
+/* Tạo 1 bản ghi dự án đầy đủ (metadata + tiến độ) */
+function freshRecord(id, name, nameKr, order, members){
+  return {
+    id: String(id),
+    name: name || "",
+    name_kr: nameKr || "",
+    order: typeof order === "number" ? order : 0,
+    status:1, start:0, end:6, progress:0, notes:"",
+    subprojects:[],
+    members: Array.isArray(members) ? [...members] : [],
+    lead:""
+  };
+}
+
+function seedState(){
+  const obj = {};
+  DEFAULT_PROJECTS.forEach((p, idx)=>{
+    obj[String(p.id)] = freshRecord(p.id, p.name, p.name_kr, idx, p.members);
+  });
+  return obj;
 }
 
 // % tiến độ = số dự án đề xuất đã tích "Hoàn thành" / tổng số dự án đề xuất đã nhập
@@ -345,14 +419,41 @@ function recalcProgressAndStatus(pid){
   }
 }
 
+function escAttr(str){
+  return String(str==null?"":str)
+    .replace(/&/g,"&amp;")
+    .replace(/"/g,"&quot;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;");
+}
+
 function loadLocalState(){
   let raw = null;
   try{ raw = localStorage.getItem(STORAGE_KEY); }catch(e){}
-  let saved = {};
-  if(raw){ try{ saved = JSON.parse(raw); }catch(e){ saved = {}; } }
-  PROJECTS.forEach(p=>{
-    if(!saved[p.id]) saved[p.id] = defaultProjectState(p.id);
-    if(!Array.isArray(saved[p.id].subprojects)) saved[p.id].subprojects = [];
+  let saved = null;
+  if(raw){ try{ saved = JSON.parse(raw); }catch(e){ saved = null; } }
+  if(!saved || typeof saved !== "object" || !Object.keys(saved).length){
+    return seedState();
+  }
+  // Tương thích ngược: bổ sung các trường còn thiếu cho dữ liệu đã lưu từ trước
+  const defaultsById = {};
+  DEFAULT_PROJECTS.forEach((p, idx)=>{ defaultsById[String(p.id)] = {...p, order: idx}; });
+  Object.keys(saved).forEach(k=>{
+    const rec = saved[k] || {};
+    const def = defaultsById[String(k)];
+    rec.id = String(k);
+    if(typeof rec.name !== "string") rec.name = def ? def.name : ("Dự án #" + k);
+    if(typeof rec.name_kr !== "string") rec.name_kr = def ? def.name_kr : "";
+    if(typeof rec.order !== "number") rec.order = def ? def.order : 999;
+    if(typeof rec.status !== "number") rec.status = 1;
+    if(typeof rec.start !== "number") rec.start = 0;
+    if(typeof rec.end !== "number") rec.end = 6;
+    if(typeof rec.progress !== "number") rec.progress = 0;
+    if(typeof rec.notes !== "string") rec.notes = "";
+    if(!Array.isArray(rec.subprojects)) rec.subprojects = [];
+    if(!Array.isArray(rec.members)) rec.members = def ? [...def.members] : [];
+    if(typeof rec.lead !== "string") rec.lead = "";
+    saved[k] = rec;
   });
   return saved;
 }
@@ -361,13 +462,23 @@ let state = loadLocalState();
 let activeFilter = "all";
 let searchTerm = "";
 
+function getProjectsList(){
+  return Object.values(state).sort((a,b)=>(a.order??0)-(b.order??0));
+}
+
+function codeForId(pid){
+  const list = getProjectsList();
+  const idx = list.findIndex(p=>p.id===pid);
+  return String(idx+1).padStart(2,"0");
+}
+
 function cacheLocal(){
   try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){}
 }
 
 function pushProjectUpdate(pid, labelVi, labelKr){
   cacheLocal();
-  const code = String(pid).padStart(2,"0");
+  const code = codeForId(pid);
   if(db){
     db.ref("projects/"+pid).set(state[pid])
       .then(()=>{
@@ -382,6 +493,25 @@ function pushProjectUpdate(pid, labelVi, labelKr){
   }else{
     updateSaveStatus(true);
     showToast("💾 Đã lưu cục bộ: " + (labelVi||"cập nhật") + " · 로컬 저장: " + (labelKr||"업데이트") + " (#" + code + ")");
+  }
+}
+
+function removeProjectRemote(pid){
+  cacheLocal();
+  if(db){
+    db.ref("projects/"+pid).remove()
+      .then(()=>{
+        updateSaveStatus(true);
+        showToast("🗑 Đã xoá dự án · 프로젝트 삭제됨");
+      })
+      .catch(err=>{
+        console.error(err);
+        updateSaveStatus(false);
+        showToast("❌ Xoá thất bại — kiểm tra mạng · 삭제 실패 — 네트워크 확인");
+      });
+  }else{
+    updateSaveStatus(true);
+    showToast("🗑 Đã xoá dự án (lưu cục bộ) · 로컬에서 프로젝트 삭제됨");
   }
 }
 
@@ -420,39 +550,43 @@ function render(){
 }
 
 function renderHeader(){
+  const list = getProjectsList();
   const counts = {1:0,2:0,3:0,4:0};
   let sumProgress = 0;
-  PROJECTS.forEach(p=>{
-    const s = state[p.id];
-    counts[s.status]++;
-    sumProgress += Number(s.progress)||0;
+  list.forEach(p=>{
+    counts[p.status]++;
+    sumProgress += Number(p.progress)||0;
   });
   document.getElementById("cnt1").textContent = counts[1];
   document.getElementById("cnt2").textContent = counts[2];
   document.getElementById("cnt3").textContent = counts[3];
   document.getElementById("cnt4").textContent = counts[4];
-  const avg = Math.round(sumProgress / PROJECTS.length);
+  const avg = list.length ? Math.round(sumProgress / list.length) : 0;
   document.getElementById("ringPct").textContent = avg + "%";
   const circumference = 251.2;
   const offset = circumference - (avg/100)*circumference;
   document.getElementById("ringFg").setAttribute("stroke-dashoffset", offset);
+  const countViEl = document.getElementById("projectCountVi");
+  const countKrEl = document.getElementById("projectCountKr");
+  if(countViEl) countViEl.textContent = list.length;
+  if(countKrEl) countKrEl.textContent = list.length;
 }
 
 function renderTimeline(){
   const wrap = document.getElementById("tlWrap");
+  const list = getProjectsList();
   let html = `<div class="tl-head"><div></div>${MONTHS.map(m=>`<div>${m}</div>`).join("")}</div>`;
-  PROJECTS.forEach(p=>{
-    const s = state[p.id];
-    const code = String(p.id).padStart(2,"0");
-    const span = Math.max(1, s.end - s.start + 1);
-    const leftPct = (s.start/MONTH_COUNT)*100;
+  list.forEach((p, idx)=>{
+    const code = String(idx+1).padStart(2,"0");
+    const span = Math.max(1, p.end - p.start + 1);
+    const leftPct = (p.start/MONTH_COUNT)*100;
     const widthPct = (span/MONTH_COUNT)*100;
-    const fillWidthPct = widthPct * ((Number(s.progress)||0)/100);
+    const fillWidthPct = widthPct * ((Number(p.progress)||0)/100);
     html += `<div class="tl-row">
-      <div class="name"><span class="tl-title">${code} · ${p.name}</span><span class="tl-pct">${s.progress}%</span></div>
+      <div class="name"><span class="tl-title">${code} · ${p.name}</span><span class="tl-pct">${p.progress}%</span></div>
       <div class="tl-track">
-        <div class="tl-bar status-${s.status}" style="left:${leftPct}%;width:${widthPct}%;"></div>
-        <div class="tl-bar-fill status-${s.status}" style="left:${leftPct}%;width:${fillWidthPct}%;"></div>
+        <div class="tl-bar status-${p.status}" style="left:${leftPct}%;width:${widthPct}%;"></div>
+        <div class="tl-bar-fill status-${p.status}" style="left:${leftPct}%;width:${fillWidthPct}%;"></div>
       </div>
     </div>`;
   });
@@ -477,12 +611,11 @@ function renderTimeline(){
 }
 
 function passesFilter(p){
-  const s = state[p.id];
-  if(activeFilter !== "all" && String(s.status) !== activeFilter) return false;
+  if(activeFilter !== "all" && String(p.status) !== activeFilter) return false;
   if(searchTerm){
     const t = searchTerm.toLowerCase();
     const inName = p.name.toLowerCase().includes(t) || (p.name_kr||"").toLowerCase().includes(t);
-    const inMembers = p.members.some(m=>m.toLowerCase().includes(t));
+    const inMembers = (p.members||[]).some(m=>m.toLowerCase().includes(t)) || (p.lead||"").toLowerCase().includes(t);
     if(!inName && !inMembers) return false;
   }
   return true;
@@ -490,7 +623,8 @@ function passesFilter(p){
 
 function renderCards(){
   const wrap = document.getElementById("cardsWrap");
-  const visible = PROJECTS.filter(passesFilter);
+  const list = getProjectsList();
+  const visible = list.filter(passesFilter);
   document.getElementById("emptyState").style.display = visible.length ? "none" : "block";
   wrap.innerHTML = visible.map(p=>cardHtml(p)).join("");
   visible.forEach(p=>bindCardEvents(p));
@@ -499,10 +633,9 @@ function renderCards(){
 const dotClassByStatus = {1:"blue",2:"amber",3:"green",4:"red"};
 
 function cardHtml(p){
-  const s = state[p.id];
-  const code = String(p.id).padStart(2,"0");
-  const subprojectsHtml = s.subprojects.length
-    ? s.subprojects.map((sp,idx)=>`
+  const code = codeForId(p.id);
+  const subprojectsHtml = p.subprojects.length
+    ? p.subprojects.map((sp,idx)=>`
       <div class="subproject-item ${sp.done?"done":""}" data-idx="${idx}">
         <label class="sp-check">
           <input type="checkbox" class="sp-checkbox" data-idx="${idx}" data-pid="${p.id}" ${sp.done?"checked":""}>
@@ -524,27 +657,54 @@ function cardHtml(p){
       <div class="num">${code}</div>
       <div class="card-body">
         <div class="card-title-row">
-          <span class="status-dot dot ${dotClassByStatus[s.status]}"></span>
+          <span class="status-dot dot ${dotClassByStatus[p.status]}"></span>
           <span class="card-title">${p.name}</span>
+          <button class="name-edit-btn" data-pid="${p.id}" title="Sửa tên dự án · 프로젝트명 수정">✏ Sửa tên · 이름 수정</button>
+          <button class="project-del" data-pid="${p.id}" title="Xoá dự án này · 이 프로젝트 삭제">🗑 Xoá dự án · 삭제</button>
         </div>
         <div class="card-title-kr">${p.name_kr || ""}</div>
-        <div class="members">
-          ${p.members.map(m=>`<span class="tag">${m}</span>`).join("")}
+        <div class="name-edit-row" data-pid="${p.id}" style="display:none;">
+          <input type="text" class="name-edit-input" placeholder="Tên dự án (VI)... · 프로젝트명 (베트남어)..." value="${escAttr(p.name)}">
+          <input type="text" class="name-edit-input-kr" placeholder="Tên tiếng Hàn (tuỳ chọn) · 한글명 (선택)" value="${escAttr(p.name_kr||"")}">
+          <button class="btn name-save-btn" data-pid="${p.id}">Lưu · 저장</button>
+          <button class="btn-ghost name-cancel-btn" data-pid="${p.id}">Huỷ · 취소</button>
+        </div>
+
+        <div class="section-label">Thành viên tham gia · <span class="kr">참여 인원</span></div>
+        <div class="members" data-pid="${p.id}">
+          ${(p.members||[]).length
+            ? p.members.map((m,idx)=>`<span class="tag ${m===p.lead?"tag-lead":""}">${m===p.lead?"⭐ ":""}${m}<button class="tag-del" data-midx="${idx}" data-pid="${p.id}" title="Xoá thành viên · 삭제">✕</button></span>`).join("")
+            : `<span class="subproject-empty">Chưa có thành viên nào. · <span class="kr">등록된 인원이 없습니다.</span></span>`}
+        </div>
+        <div class="add-member">
+          <input type="text" placeholder="Tên thành viên mới... · 신규 인원 이름..." class="member-input" data-pid="${p.id}">
+          <button class="btn add-member-btn" data-pid="${p.id}">+ Thêm thành viên · 추가</button>
+        </div>
+
+        <div class="section-label">Nhân viên chính phụ trách · <span class="kr">담당 주임(메인 담당자)</span></div>
+        <div class="lead-row">
+          <select class="lead-select" data-pid="${p.id}">
+            <option value="">-- Chọn nhân viên chính · 담당자 선택 --</option>
+            ${(p.members||[]).map(m=>`<option value="${m}" ${m===p.lead?"selected":""}>${m}</option>`).join("")}
+          </select>
+          ${p.lead
+            ? `<span class="lead-badge">⭐ ${p.lead}</span>`
+            : `<span class="lead-badge lead-empty">Chưa chỉ định · 미지정</span>`}
         </div>
 
         <div class="controls-row">
           <select class="status-select" data-pid="${p.id}">
-            <option value="1" ${s.status==1?"selected":""}>${STATUS_VI[1]} · ${STATUS_KR[1]}</option>
-            <option value="2" ${s.status==2?"selected":""}>${STATUS_VI[2]} · ${STATUS_KR[2]}</option>
-            <option value="3" ${s.status==3?"selected":""}>${STATUS_VI[3]} · ${STATUS_KR[3]}</option>
-            <option value="4" ${s.status==4?"selected":""}>${STATUS_VI[4]} · ${STATUS_KR[4]}</option>
+            <option value="1" ${p.status==1?"selected":""}>${STATUS_VI[1]} · ${STATUS_KR[1]}</option>
+            <option value="2" ${p.status==2?"selected":""}>${STATUS_VI[2]} · ${STATUS_KR[2]}</option>
+            <option value="3" ${p.status==3?"selected":""}>${STATUS_VI[3]} · ${STATUS_KR[3]}</option>
+            <option value="4" ${p.status==4?"selected":""}>${STATUS_VI[4]} · ${STATUS_KR[4]}</option>
           </select>
-          <select class="start-select" data-pid="${p.id}">${monthOptions(s.start)}</select>
+          <select class="start-select" data-pid="${p.id}">${monthOptions(p.start)}</select>
           <span class="arrow">→</span>
-          <select class="end-select" data-pid="${p.id}">${monthOptions(s.end)}</select>
+          <select class="end-select" data-pid="${p.id}">${monthOptions(p.end)}</select>
           <div class="progress-auto-row">
-            <div class="progress-track"><div class="progress-fill status-${s.status}" style="width:${s.progress}%"></div></div>
-            <span class="progress-auto-pct">${s.progress}%</span>
+            <div class="progress-track"><div class="progress-fill status-${p.status}" style="width:${p.progress}%"></div></div>
+            <span class="progress-auto-pct">${p.progress}%</span>
             <span class="progress-auto-hint">Tự động tính theo dự án đề xuất · <span class="kr">제안 프로젝트 기준 자동 계산</span></span>
           </div>
         </div>
@@ -558,7 +718,7 @@ function cardHtml(p){
         </div>
 
         <div class="section-label">Ghi chú tiến độ · <span class="kr">진행 메모</span></div>
-        <textarea placeholder="Ghi chú tiến độ, vướng mắc... · 진행 상황, 이슈 등을 기록하세요..." class="notes-area" data-pid="${p.id}">${s.notes||""}</textarea>
+        <textarea placeholder="Ghi chú tiến độ, vướng mắc... · 진행 상황, 이슈 등을 기록하세요..." class="notes-area" data-pid="${p.id}">${p.notes||""}</textarea>
         <div class="saved-hint">Tự động lưu trên trình duyệt này. · 이 브라우저에 자동 저장됩니다.</div>
       </div>
     </div>
@@ -568,6 +728,47 @@ function cardHtml(p){
 function bindCardEvents(p){
   const pid = p.id;
   const card = document.querySelector(`.card[data-pid="${pid}"]`);
+
+  card.querySelector(".project-del").addEventListener("click", ()=>{
+    const name = state[pid] ? state[pid].name : "";
+    const ok = confirm(`Xoá dự án "${name}"? Hành động này không thể hoàn tác.\n"${name}" 프로젝트를 삭제하시겠습니까? 되돌릴 수 없습니다.`);
+    if(!ok) return;
+    delete state[pid];
+    render();
+    removeProjectRemote(pid);
+  });
+
+  const nameEditBtn = card.querySelector(".name-edit-btn");
+  const nameEditRow = card.querySelector(".name-edit-row");
+  const nameInput = card.querySelector(".name-edit-input");
+  const nameKrInput = card.querySelector(".name-edit-input-kr");
+
+  nameEditBtn.addEventListener("click", ()=>{
+    nameEditRow.style.display = "flex";
+    nameEditBtn.style.display = "none";
+    nameInput.focus();
+  });
+
+  function closeNameEdit(){
+    nameEditRow.style.display = "none";
+    nameEditBtn.style.display = "inline-block";
+    nameInput.value = state[pid].name;
+    nameKrInput.value = state[pid].name_kr || "";
+  }
+  card.querySelector(".name-cancel-btn").addEventListener("click", closeNameEdit);
+
+  function saveNameEdit(){
+    const newName = nameInput.value.trim();
+    const newNameKr = nameKrInput.value.trim();
+    if(!newName){ nameInput.focus(); return; }
+    state[pid].name = newName;
+    state[pid].name_kr = newNameKr;
+    render();
+    pushProjectUpdate(pid, "đổi tên dự án: " + newName, "프로젝트명 변경: " + newName);
+  }
+  card.querySelector(".name-save-btn").addEventListener("click", saveNameEdit);
+  nameInput.addEventListener("keydown", e=>{ if(e.key === "Enter"){ e.preventDefault(); saveNameEdit(); } });
+  nameKrInput.addEventListener("keydown", e=>{ if(e.key === "Enter"){ e.preventDefault(); saveNameEdit(); } });
 
   card.querySelector(".status-select").addEventListener("change", e=>{
     state[pid].status = Number(e.target.value);
@@ -621,6 +822,38 @@ function bindCardEvents(p){
     });
   });
 
+  card.querySelectorAll(".tag-del").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      const idx = Number(btn.getAttribute("data-midx"));
+      const removed = state[pid].members[idx];
+      if(state[pid].lead === removed) state[pid].lead = "";
+      state[pid].members.splice(idx,1);
+      render();
+      pushProjectUpdate(pid, "xoá thành viên: " + removed, "인원 삭제: " + removed);
+    });
+  });
+
+  function addMemberFromInput(){
+    const input = card.querySelector(".member-input");
+    const name = input.value.trim();
+    if(!name) return;
+    if(!Array.isArray(state[pid].members)) state[pid].members = [];
+    if(state[pid].members.includes(name)){ input.value=""; return; }
+    state[pid].members.push(name);
+    render();
+    pushProjectUpdate(pid, "thêm thành viên: " + name, "인원 추가: " + name);
+  }
+  card.querySelector(".add-member-btn").addEventListener("click", addMemberFromInput);
+  card.querySelector(".member-input").addEventListener("keydown", e=>{
+    if(e.key === "Enter"){ e.preventDefault(); addMemberFromInput(); }
+  });
+
+  card.querySelector(".lead-select").addEventListener("change", e=>{
+    state[pid].lead = e.target.value;
+    render();
+    pushProjectUpdate(pid, "nhân viên chính: " + (e.target.value || "chưa chỉ định"), "담당자: " + (e.target.value || "미지정"));
+  });
+
   card.querySelector(".notes-area").addEventListener("input", e=>{
     state[pid].notes = e.target.value;
     cacheLocal();
@@ -645,6 +878,29 @@ document.querySelectorAll(".pill").forEach(btn=>{
   });
 });
 
+function addNewProject(){
+  const nameInput = document.getElementById("newProjectName");
+  const nameKrInput = document.getElementById("newProjectNameKr");
+  const name = nameInput.value.trim();
+  const nameKr = nameKrInput.value.trim();
+  if(!name){ nameInput.focus(); return; }
+  const list = getProjectsList();
+  const maxOrder = list.reduce((m,p)=>Math.max(m, p.order??0), -1);
+  const id = String(Date.now());
+  state[id] = freshRecord(id, name, nameKr, maxOrder + 1, []);
+  nameInput.value = "";
+  nameKrInput.value = "";
+  render();
+  pushProjectUpdate(id, "thêm dự án mới: " + name, "신규 프로젝트 추가: " + name);
+}
+document.getElementById("addProjectBtn").addEventListener("click", addNewProject);
+document.getElementById("newProjectName").addEventListener("keydown", e=>{
+  if(e.key === "Enter"){ e.preventDefault(); addNewProject(); }
+});
+document.getElementById("newProjectNameKr").addEventListener("keydown", e=>{
+  if(e.key === "Enter"){ e.preventDefault(); addNewProject(); }
+});
+
 function setModeStatus(){
   const el = document.getElementById("modeStatus");
   if(!el) return;
@@ -661,16 +917,35 @@ setModeStatus();
 if(db){
   db.ref("projects").on("value", snap=>{
     const data = snap.val() || {};
-    PROJECTS.forEach(p=>{
-      if(data[p.id]){
-        const merged = Object.assign(defaultProjectState(p.id), data[p.id]);
-        if(!Array.isArray(merged.subprojects)) merged.subprojects = [];
-        state[p.id] = merged;
-      }else if(!state[p.id]){
-        state[p.id] = defaultProjectState(p.id);
-        db.ref("projects/"+p.id).set(state[p.id]).catch(()=>{});
-      }
-    });
+    const keys = Object.keys(data);
+    if(!keys.length){
+      // Chưa có dữ liệu nào trên Firebase — khởi tạo bằng 13 dự án mặc định
+      const seeded = seedState();
+      Object.keys(seeded).forEach(k=>{
+        db.ref("projects/"+k).set(seeded[k]).catch(()=>{});
+      });
+      state = seeded;
+    }else{
+      const newState = {};
+      keys.forEach(k=>{
+        const rec = data[k] || {};
+        newState[k] = {
+          id: String(k),
+          name: typeof rec.name === "string" ? rec.name : ("Dự án #" + k),
+          name_kr: typeof rec.name_kr === "string" ? rec.name_kr : "",
+          order: typeof rec.order === "number" ? rec.order : 999,
+          status: typeof rec.status === "number" ? rec.status : 1,
+          start: typeof rec.start === "number" ? rec.start : 0,
+          end: typeof rec.end === "number" ? rec.end : 6,
+          progress: typeof rec.progress === "number" ? rec.progress : 0,
+          notes: typeof rec.notes === "string" ? rec.notes : "",
+          subprojects: Array.isArray(rec.subprojects) ? rec.subprojects : [],
+          members: Array.isArray(rec.members) ? rec.members : [],
+          lead: typeof rec.lead === "string" ? rec.lead : ""
+        };
+      });
+      state = newState;
+    }
     cacheLocal();
     render();
   }, err=>{
